@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  <mapper namespace="kr.or.ddit.common.survey.mapper.ISurveyMapper">
+  
+	<resultMap id="surveyResultMap" type="SurveyVO">
+	    <!-- SurveyVO 필드 매핑 -->
+	    <id property="survNo" column="surv_no"/>
+	    <result property="memNo" column="mem_no"/>
+	    <result property="survTitle" column="surv_title"/>
+	    <result property="survIntro" column="surv_intro"/>
+	    <result property="startDate" column="start_date"/>
+	    <result property="endDate" column="end_date"/>
+	    <result property="publicYn" column="public_yn"/>
+	    <result property="importYn" column="import_yn"/>
+	    <result property="updateYn" column="update_yn"/>
+	    
+	    <!-- SurveyQuestionVO를 List로 매핑 -->
+	    <collection property="surveyQuestion" ofType="SurveyQuestionVO">
+	        <id property="qNo" column="q_no"/>
+	        <result property="survNo" column="surv_no"/>
+	        <result property="qContent" column="q_content"/>
+	        <result property="qType" column="q_type"/>
+	        <result property="singleOrMulti" column="single_or_multi"/>
+	        
+	        <!-- QuestionChoiceVO를 List로 매핑 -->
+	        <collection property="surveyChoice" ofType="QuestionChoiceVO">
+	            <id property="choiceNo" column="choice_no"/>
+	            <result property="qNo" column="q_no"/>
+	            <result property="choiceContent" column="choice_content"/>
+	        </collection>
+	    </collection>
+	</resultMap>
+
+  <!-- 설문 작성 폼에 넣어줄 데이터 뽑아오기 -->
+  <select id="getThisSurvey" parameterType="int" resultMap="surveyResultMap">
+	SELECT 
+	    s.surv_no,
+	    s.mem_no,
+	    s.surv_title,
+	    s.surv_intro,
+	    s.start_date,
+	    s.end_date,
+	    s.public_yn,
+	    s.import_yn,
+	    s.update_yn,
+	    q.q_no,
+	    q.surv_no,
+	    q.q_content,
+	    q.q_type,
+	    q.single_or_multi,
+	    c.choice_no,
+	    c.q_no,
+	    c.choice_content
+	FROM 
+	    SURVEY s
+	LEFT JOIN 
+	    SURVEY_QUESTION q ON s.surv_no = q.surv_no
+	LEFT JOIN 
+	    QUESTION_CHOICE c ON q.q_no = c.q_no
+	WHERE 
+	    s.surv_no = #{survNo}
+	ORDER BY q.q_no ASC, c.choice_no ASC
+  </select>
+  
+  <!-- 내가 참여하는 설문 목록 뽑아오기 -->
+  <select id="getMyAttendanceList" parameterType="int" resultType="SurveyAttendeeVO">
+  SELECT 
+  	surv_no
+  	,mem_no
+  	,surv_yn
+  FROM 
+  	survey_attendee
+  where mem_no = #{memNo}
+  </select>
+  
+  <!-- 내가 참여하는 설문의 세부 정보 뽑아오기 -->
+  <select id="getMySurveyList" parameterType="int" resultType="SurveyVO">
+	SELECT
+	  s.surv_no,
+	  s.mem_no,
+	  m.mem_name,
+	  s.surv_title,
+	  s.surv_intro,
+	  s.start_date,
+	  s.end_date,
+	  s.public_yn,
+	  s.import_yn,
+	  s.update_yn
+	FROM
+	    survey s
+	JOIN
+	    survey_attendee sa ON s.surv_no = sa.surv_no
+	JOIN
+	    member m ON s.mem_no = m.mem_no   
+	WHERE
+	    sa.mem_no = #{memNo}
+	ORDER BY s.start_date DESC
+  
+  </select>
+
+	<!-- 조직도 표현울 위해 모든 부서의 부서번호와 이름 뽑아오기 -->
+  <select id="getDepartmentList" resultType="DepartmentVO">
+  SELECT
+    dept_no
+    ,dept_name
+  FROM
+    department
+    order by dept_no asc
+  </select>
+  
+  <!-- 조직도 표현을 위해 모든 멤버의 리스트 뽑아오기 -->
+  <select id="getMemberList" resultType="MemberVO">
+  select
+	mem_no
+  	,mem_name
+  	,dept_no
+  from member
+  	order by mem_name asc
+  </select>
+  
+  <!-- 작성자 정보 뽑아내기 -->
+  <select id="getWriterInfo" parameterType="int" resultType="SurveyVO">
+	SELECT 
+	    m.mem_name, 
+	    p.pos_name, 
+	    d.dept_name
+	FROM 
+	    member m
+	JOIN 
+	    position p ON m.pos_no = p.pos_no
+	JOIN 
+	    department d ON m.dept_no = d.dept_no
+	WHERE 
+	    m.mem_no = #{memNo}
+  </select>
+  
+  <!-- 설문에 답변한 정보 insert하기 -->
+  <insert id="submitResponse" parameterType="SurveyResponseVO">
+	INSERT INTO survey_response (
+	    resp_no,
+	    q_no,
+	    mem_no,
+	    resp_content
+	) VALUES (
+	    SEQ_SURVEY_RESPONSE.nextval,
+	    #{QNo},
+	    #{memNo},
+	    #{respContent}
+	)
+  </insert>
+  
+  <!-- 설문 답변한 인원의 참여여부 Y로 바꾸기 -->
+  <update id="participatedSuevey" parameterType="SurveyAttendeeVO">
+	UPDATE survey_attendee
+	    SET
+	        SURV_YN = 'Y'
+	WHERE
+	    surv_no = #{survNo}
+	    AND   
+	    mem_no = #{memNo}
+  </update>
+  
+  <!-- 특정 설문의 모든 Attendee 정보 가져오기 -->
+  <select id="getSurveyAttendee" parameterType="int" resultType="SurveyAttendeeVO">
+	SELECT
+	    surv_no,
+	    mem_no,
+	    surv_yn
+	FROM
+	    survey_attendee
+	WHERE
+		surv_no = #{survNo}
+  </select>
+  
+  </mapper>

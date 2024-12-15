@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  <mapper namespace="kr.or.ddit.common.chat.mapper.IChatMapper">
+  <select id="getRoomList" parameterType="int" resultType="ChatRoomVO">
+    SELECT
+        r.rm_no, 
+        r.rm_name, 
+        r.rm_img, 
+        r.reg_date,
+        r.mem_no,
+        r.rm_type,
+        c.chat_date, 
+        c.chat_msg, 
+        p.roomPeople,
+        NVL(unreadCount.unread_count, 0) AS unread_count
+    FROM (
+        SELECT 
+            r.rm_no, 
+            r.rm_name, 
+            r.rm_img, 
+            r.reg_date, 
+            r.mem_no,
+            r.rm_type
+        FROM 
+            CHAT_ROOM r 
+        RIGHT JOIN (
+            SELECT rm_no 
+            FROM CHAT_ROOM_MEMBER 
+            WHERE mem_no = #{memNo}
+        ) rm ON r.rm_no = rm.rm_no
+    ) r
+    LEFT JOIN (
+        SELECT 
+            rm_no, 
+            msg_content AS chat_msg,
+            reg_date AS chat_date
+        FROM 
+            CHAT_MESSAGE
+        WHERE (rm_no, reg_date) IN (
+            SELECT rm_no, MAX(reg_date) 
+            FROM CHAT_MESSAGE 
+            GROUP BY rm_no
+        )
+    ) c ON r.rm_no = c.rm_no
+    JOIN (
+        SELECT 
+            rm_no, 
+            COUNT(*) AS roomPeople
+        FROM 
+            CHAT_ROOM_MEMBER
+        WHERE 
+            rm_no IN (SELECT rm_no FROM CHAT_ROOM_MEMBER WHERE mem_no = #{memNo})
+        GROUP BY 
+            rm_no
+    ) p ON r.rm_no = p.rm_no
+    LEFT JOIN (
+        SELECT 
+            crm.rm_no,
+            COUNT(*) AS unread_count
+        FROM 
+            CHAT_MESSAGE cm
+        JOIN 
+            CHAT_ROOM_MEMBER crm ON cm.rm_no = crm.rm_no
+        WHERE 
+            cm.msg_no <![CDATA[>]]> crm.last_read
+            AND crm.mem_no = #{memNo}
+        GROUP BY 
+            crm.rm_no
+    ) unreadCount ON r.rm_no = unreadCount.rm_no
+    ORDER BY 
+        GREATEST(NVL(c.chat_date, TO_DATE('1900-01-01', 'YYYY-MM-DD')), r.reg_date) DESC
+</select>
+
+
+
+<select id="getChatList" parameterType="int" resultType="ChatMessageVO">
+    SELECT 
+        m.MSG_NO, 
+        m.RM_NO, 
+        m.MSG_CONTENT, 
+        TO_CHAR(m.reg_date, 'YYYY-MM-DD') AS reg_date, 
+        m.FILE_NO, 
+        m.MEM_NO,
+        u.MEM_NAME AS MEM_NAME, 
+        u.MEM_PROFILEIMG AS SENDER_IMG,
+        p.POS_NAME AS SENDER_POS_NAME,
+        (
+            SELECT COUNT(*)
+            FROM CHAT_ROOM_MEMBER crm
+            WHERE crm.RM_NO = m.RM_NO
+              AND (NVL(crm.LAST_READ, 0) <![CDATA[<]]> m.MSG_NO)
+              AND crm.MEM_NO != m.MEM_NO
+        ) AS unread_count
+    FROM 
+        CHAT_MESSAGE m
+    JOIN 
+        MEMBER u ON m.MEM_NO = u.MEM_NO
+    JOIN 
+        POSITION p ON u.POS_NO = p.POS_NO
+    WHERE 
+        m.RM_NO = #{rmNo}
+    ORDER BY 
+        m.REG_DATE ASC
+</select>
+
+<insert id="saveChatMessage" parameterType="ChatMessageVO">
+INSERT INTO chat_message (
+    msg_no
+    , rm_no
+    , msg_content
+    , reg_date
+    , file_no
+    , mem_no
+) VALUES (
+    SEQ_CHATmsg.NEXTVAL
+  , #{rmNo}
+  , #{msgContent}
+  , sysdate
+  , #{fileNo}
+  , #{memNo}
+)
+</insert>
+
+<select id="getMember" parameterType="String" resultType="MemberVO">
+	select * from member
+	where mem_id=#{memId}
+</select>
+
+<update id="updateLastRead" parameterType="ChatRoomMemberVO">
+    UPDATE CHAT_ROOM_MEMBER
+    SET LAST_READ = (SELECT MAX(MSG_NO) 
+                     FROM CHAT_MESSAGE
+                     WHERE RM_NO = #{rmNo})
+    WHERE RM_NO = #{rmNo} 
+    AND MEM_NO = #{memNo}
+    
+</update>
+
+<select id="getChatRoomMemberList" parameterType="int" resultType="MemberVO">
+SELECT
+	        M.MEM_NO,
+	        M.POS_NO,
+	        M.DEPT_NO,
+	        M.WT_NO,
+	        M.MEM_ID,
+	        M.MEM_PW,
+	        M.MEM_NAME,
+	        M.MEM_TEL,
+	        M.MEM_EMAIL,
+	        M.MEM_ADDR1,
+	        M.MEM_ADDR2,
+	        M.MEM_POST,
+	        TO_CHAR(M.HIRE_DATE, 'YYYY-MM-DD') AS HIRE_DATE,
+	        M.MEM_STATUS,
+	        M.DRIVER_LICENSE,
+	        M.MEM_PROFILEIMG,
+	        M.TEMP_PW_YN,
+	        M.ENABLED,
+	        M.WORK_VACA,
+	        M.DRIVE_VOLUME,
+	        M.MEM_CARD_IMAGE,
+	        M.MEM_CARD_MEMO,
+	        P.POS_NAME,
+	        D.DEPT_NAME
+	    FROM MEMBER M
+	    LEFT JOIN DEPARTMENT D ON M.DEPT_NO = D.DEPT_NO
+	    LEFT JOIN POSITION P ON M.POS_NO = P.POS_NO
+	    INNER JOIN CHAT_ROOM_MEMBER CRM ON M.MEM_NO = CRM.MEM_NO AND CRM.RM_NO=#{rmNo}
+	    
+</select>
+
+<insert id="createSingleChatRoom" parameterType="ChatRoomVO" useGeneratedKeys="true">
+	<selectKey keyProperty="rmNo" resultType="int" order="BEFORE">
+        SELECT SEQ_CHATROOM.NEXTVAL FROM DUAL
+    </selectKey>
+	INSERT INTO chat_room (
+	    rm_no
+	    , mem_no
+	    , reg_date
+	    , rm_type
+	    , rm_name
+	) VALUES (
+	    #{rmNo}
+	  , #{memNo}
+	  , sysdate
+	  , #{rmType}
+	  , #{rmName}
+	)
+</insert>
+
+<insert id="registerChatMember" parameterType="ChatRoomMemberVO">
+	INSERT INTO chat_room_member (
+	    rm_no
+	    , mem_no
+	) VALUES (
+	    #{rmNo}
+	  , #{memNo}
+	)
+</insert>
+
+<select id="findSingleChatRoom" parameterType="map" resultType="Integer">
+    SELECT DISTINCT NVL(r.RM_NO, 0) AS RM_NO
+	FROM CHAT_ROOM r 
+	JOIN CHAT_ROOM_MEMBER m1 ON r.RM_NO = m1.RM_NO 
+	JOIN CHAT_ROOM_MEMBER m2 ON r.RM_NO = m2.RM_NO 
+	WHERE r.RM_TYPE = '일반'
+	  AND ((m1.MEM_NO = #{userMemNo} AND m2.MEM_NO = #{targetMemNo}) 
+	    OR (m1.MEM_NO = #{targetMemNo} AND m2.MEM_NO = #{userMemNo}))
+</select>
+
+<select id="getOtherMemberName" parameterType="ChatRoomMemberVO" resultType="MemberVO">
+    SELECT 
+        m.mem_name,
+        m.MEM_PROFILEIMG
+    FROM 
+        CHAT_ROOM_MEMBER crm
+    JOIN 
+        MEMBER m ON crm.mem_no = m.mem_no
+    WHERE 
+        crm.mem_no != #{memNo} 
+        AND crm.rm_no = #{rmNo}
+</select>
+
+<select id="getRoom" parameterType="int" resultType="ChatRoomVO">
+	select * from CHAT_ROOM
+	where rm_no=#{rmNo}
+</select>
+
+  </mapper>

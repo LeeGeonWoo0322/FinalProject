@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  <mapper namespace="kr.or.ddit.admin.approval.mapper.IAdminApprovalMapper">
+  
+  <select id="getApprFormList" resultType="ApprovalFormVO">
+  	select FORM_NO, FORM_TITLE, FORM_CATEGORY, TO_CHAR(reg_date, 'YYYY-MM-DD') AS reg_date from APPROVAL_FORM
+  	where del_yn='N'
+  </select>
+  
+  <insert id="registerApprForm" parameterType="ApprovalFormVO">
+  	INSERT INTO approval_form (
+	    form_no
+	    , form_title
+	    , form_category
+	    , form_content
+	) VALUES (
+		SEQ_APPROVAL_FORM.NEXTVAL
+	  , #{formTitle}
+	  , #{formCategory}
+	  , #{formContent}
+	)
+  </insert>
+  
+  <update id="deleteForm" parameterType="int">
+  	update approval_form
+  	set
+  		del_yn='Y'
+  	where form_no=#{formNo}
+  </update>
+  
+  <update id="updateForm" parameterType="ApprovalFormVO">
+  	update approval_form
+  	set
+  		form_title = #{formTitle},
+	    form_category=#{formCategory},
+	    form_content = #{formContent}
+  	where form_no=#{formNo}
+  </update>
+  
+	<select id="getApprovalStatistics" parameterType="map" resultType="ApprovalFormVO">
+	    SELECT 
+	        AF.FORM_NO,
+	        AF.FORM_TITLE,
+	        COUNT(A.APPR_ID) AS usageCount
+	    FROM 
+	        APPROVAL_FORM AF
+	    LEFT JOIN 
+	        APPROVAL A ON AF.FORM_NO = A.FORM_NO
+	            AND A.APPR_STATUS != '임시'
+	    WHERE 
+	        AF.DEL_YN = 'N'
+	        AND A.REG_DATE BETWEEN #{startDate} AND #{endDate}
+	        <if test="deptNo != 0">
+	            AND A.MEM_NO IN (SELECT MEM_NO FROM MEMBER WHERE DEPT_NO = #{deptNo})
+	        </if>
+	    GROUP BY
+	        AF.FORM_NO, AF.FORM_TITLE
+	</select>
+
+
+	<select id="getApprovalStatusCounts" parameterType="map" resultType="map">
+	    SELECT 
+	        TO_CHAR(REG_DATE, 'YYYY-MM-DD') AS REG_DATE,
+	        SUM(CASE WHEN APPR_STATUS = '진행중' THEN 1 ELSE 0 END) AS progress,
+	        SUM(CASE WHEN APPR_STATUS = '반려' THEN 1 ELSE 0 END) AS rejected,
+	        SUM(CASE WHEN APPR_STATUS = '완료' THEN 1 ELSE 0 END) AS completed
+	    FROM 
+	        APPROVAL
+	    WHERE
+	        REG_DATE BETWEEN #{startDate} AND #{endDate}
+	        <if test="deptNo != 0">
+	            AND MEM_NO IN (SELECT MEM_NO FROM MEMBER WHERE DEPT_NO = #{deptNo})
+	        </if>
+	    GROUP BY 
+	        TO_CHAR(REG_DATE, 'YYYY-MM-DD')
+	    ORDER BY 
+	        REG_DATE
+	</select>
+
+ </mapper>

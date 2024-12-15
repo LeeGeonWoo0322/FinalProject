@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  <mapper namespace="kr.or.ddit.admin.reservation.mapper.IAdminReservationMapper">
+  
+  	<select id="getPositionList" resultType="PositionVO">
+  		select
+  			pos_name
+            , sec_no
+  		from
+  			position
+        order by
+            pos_no
+  	</select>
+  	
+  	<select id="getAssetCategory" resultType="AssetCategoryVO">
+  		select
+  			ac_no
+  			, ac_name
+  			, ac_rep_yn
+  			, ac_use_start
+  			, ac_use_end
+  			, ac_use_week
+  			, ac_use_auth
+  			, mem_no
+  			, ac_use_stop
+  			, ac_del_yn
+  			, ac_asset_cnt
+  			, ac_use_info
+  		from
+  			asset_category
+  		where
+  			ac_del_yn = 'N'
+  		order by ac_no asc
+  	</select>
+  	
+  	<insert id="insertAssetCategory" parameterType="AssetCategoryVO">
+  		insert into asset_category(
+  			ac_no
+  			, ac_name
+  			, ac_rep_yn
+  			, ac_use_start
+  			, ac_use_end
+  			, ac_use_week
+  			, ac_use_auth
+  			, mem_no
+  		) values (
+  			seq_asset_category.nextval
+  			, #{acName}
+  			, #{acRepYn}
+  			, #{acUseStart}
+  			, #{acUseEnd}
+  			, #{acUseWeek}
+  			, #{acUseAuth}
+  			, #{memNo}
+  		)
+  	</insert>
+  	
+  	<select id="getAssetCategoryDetail" parameterType="AssetCategoryVO" resultType="AssetCategoryVO">
+  		select
+  			ac_no
+  			, ac_name
+  			, ac_rep_yn
+  			, ac_use_start
+  			, ac_use_end
+  			, ac_use_week
+  			, ac_use_auth
+  			, mem_no
+  			, ac_use_stop
+  			, ac_del_yn
+  			, ac_asset_cnt
+  			, ac_use_info
+  		from
+  			asset_category
+  		where
+  			ac_no = #{acNo}
+  	</select>
+  	
+  	<select id="getLastAssetCategoryDetail" resultType="AssetCategoryVO">
+  		select B.*
+  		from
+			(
+			select A.*, row_number() over (order by A.ac_no desc) rnum
+			from
+			    (
+			    select
+                    ac_no
+                    , ac_name
+                    , ac_rep_yn
+                    , ac_use_start
+                    , ac_use_end
+                    , ac_use_week
+                    , ac_use_auth
+                    , mem_no
+                    , ac_use_stop
+                    , ac_del_yn
+                    , ac_asset_cnt
+			    from
+			        asset_category
+			    order by ac_no DESC
+			    )A
+			)B
+		where B.rnum = 1
+  	</select>
+  	
+  	<update id="updateAssetCategory" parameterType="AssetCategoryVO">
+  		update
+  			asset_category
+  		set
+  			ac_name = #{acName}
+  			, ac_rep_yn = #{acRepYn}
+  			, ac_use_start = #{acUseStart}
+  			, ac_use_end = #{acUseEnd}
+  			, ac_use_week = #{acUseWeek}
+  			, ac_use_auth = #{acUseAuth}
+  			, ac_use_stop = #{acUseStop}
+  			, ac_del_yn = #{acDelYn}
+  		where
+  			ac_no = #{acNo}
+  	</update>
+  	
+  	<update id="updateUseInfo" parameterType="AssetCategoryVO">
+  		update
+  			asset_category
+  		set
+  			ac_use_info = #{acUseInfo}
+  		where
+  			ac_no = #{acNo}
+  	</update>
+  	
+  	<select id="getAssetByAcNo" parameterType="AssetCategoryVO" resultType="AssetVO">
+  		select
+  			ast_no
+  			, ast_name
+  			, rep_yn
+  			, ast_use_stop
+  			, ac_no
+  		from 
+  			asset
+  		where
+  			ac_no = #{acNo}
+  	</select>
+  	
+  	<insert id="addAsset" parameterType="AssetVO">
+  		insert into asset(
+  			ast_no
+  			, ast_name
+  			, rep_yn
+  			, ac_no
+  		) values (
+  			seq_asset.nextval
+  			, #{astName}
+  			, #{repYn}
+  			, #{acNo}
+  		)
+  	</insert>
+  	
+  	<select id="getLastAssetDetail" resultType="AssetVO">
+  		select B.*
+  		from
+			(
+			select A.*, row_number() over (order by A.ast_no desc) rnum
+			from
+			    (
+			    select
+					ast_no
+					, ast_name
+					, rep_yn
+					, ast_use_stop
+					, ac_no
+			    from
+			        asset
+			    order by ast_no DESC
+			    )A
+			)B
+		where B.rnum = 1
+  	</select>
+  	
+  	<update id="updateAssetCategoryByAsset">
+  		update
+  			asset_category
+  		set
+  			ac_asset_cnt = ac_asset_cnt + 1
+  		where
+  			ac_no = #{acNo}
+  	</update>
+  	
+  	<select id="getAsset" parameterType="AssetVO" resultType="AssetVO">
+  		select
+  			ast_no
+  			, ast_name
+  			, rep_yn
+  			, ast_use_stop
+  			, ac_no
+  		from 
+  			asset
+  		where
+  			ast_no = #{astNo}
+  	</select>
+  
+  </mapper>

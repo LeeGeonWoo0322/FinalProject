@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.common.ffChat.mapper.IFFChatMainMapper">
+	<insert id="create">
+		insert into videochat (
+			room_no, room_title, room_url_id, room_open
+		) values
+		(seq_videochat_no.NEXTVAL, #{roomTitle}, #{roomUrlId}, 'Y')
+	</insert>
+
+	<select id="videoChatListByName" parameterType="string" resultType="VideoChatVO">
+		select 
+    		ch.*, vrm.*
+		from
+		    videochat ch, (
+		        select 
+		            vr.*
+		            , m.mem_name
+		            , p.pos_name
+		            , d.dept_name
+		        from
+		            VIDEOCHAT_ROOM_MEMBER vr, member m, position p, department d
+		        where
+		            vr.room_title = #{roomUrlId}
+		            and vr.mem_no = m.mem_no and m.pos_no = p.pos_no and m.dept_no = d.dept_no
+		    ) vrm
+		where 
+		    1=1
+		    and vrm.room_title = ch.ROOM_URL_ID
+		    and room_open = 'Y'
+	</select>
+
+	<select id="videoChatList" parameterType="string" resultType="VideoChatVO">
+		select 
+    		ch.*
+		from
+		    videochat ch, (
+		        select 
+		            *
+		        from
+		            VIDEOCHAT_ROOM_MEMBER
+		        where
+		            mem_no = #{memNo}
+		    ) vrm
+		where 
+		    1=1
+		    and vrm.room_title = ch.ROOM_URL_ID
+		    and room_open = 'Y'
+	</select>
+
+	<select id="isTitleExist" parameterType="string" resultType="string">
+		select room_open from videochat
+		where room_open = 'Y' and room_title = #{roomTitle}	
+	</select>
+	
+	<update id="closeRoom" parameterType="string">
+		update videochat set room_open = 'N'
+		where room_url_id = #{roomUrlId}
+	</update>
+	
+	<insert id="invite" parameterType="VideochatRoomMemberVO">
+		insert into VIDEOCHAT_ROOM_MEMBER (
+			room_title,
+			mem_no
+		) values (
+			#{roomId},
+			#{memNo}
+		)
+	</insert>
+</mapper>

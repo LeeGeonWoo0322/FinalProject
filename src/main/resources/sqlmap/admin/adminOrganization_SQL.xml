@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  <mapper namespace="kr.or.ddit.admin.organization.mapper.IAdminOrganizationMapper">
+  	<insert id="addDept" parameterType="DepartmentVO">
+  		insert into department (
+  			dept_no, dept_name
+  		) values (
+  			#{deptNo}, #{deptName}
+  		) 
+  	</insert>
+  	
+  	<select id="printMember" resultType="MemberVO">
+  		select
+  			*
+  		from
+  			member
+  	</select>
+  	
+  	<select id="printDept" resultType="DepartmentVO">
+  		select
+  			dept_no, dept_name
+  		from
+  			Department
+  		order by dept_no asc
+  	</select>
+  	
+  	<select id="printPos" resultType="PositionVO">
+  		select
+  			pos_no, pos_name
+  		from
+  			Position
+  		order by pos_no asc
+  	</select>
+  	
+  	<select id="allMember" parameterType="String" resultType="MemberVO">
+  		select
+		    MEM_NO, M.POS_NO, M.DEPT_NO, WT_NO, MEM_ID, MEM_PW, MEM_NAME, MEM_TEL, MEM_EMAIL, 
+		    MEM_ADDR1, MEM_ADDR2, MEM_POST, HIRE_DATE, MEM_STATUS, DRIVER_LICENSE, MEM_PROFILEIMG, 
+		    TEMP_PW_YN, ENABLED, WORK_VACA, DRIVE_VOLUME, MEM_CARD_IMAGE, MEM_CARD_MEMO, MAIL_VOLUME, P.POS_NAME, D.DEPT_NAME
+		from
+		    member m, position p, department d
+		where
+			1 = 1
+			<if test="search != null and search != ''"> and m.mem_name like '%'||#{search}||'%'</if>
+			and m.pos_no = p.pos_no
+			and m.dept_no = d.dept_no
+		order by mem_no
+  	</select>
+  	
+  	<select id="allMember1" resultType="MemberVO">
+  		select
+		    MEM_NO, M.POS_NO, M.DEPT_NO, WT_NO, MEM_ID, MEM_PW, MEM_NAME, MEM_TEL, MEM_EMAIL, 
+		    MEM_ADDR1, MEM_ADDR2, MEM_POST, HIRE_DATE, MEM_STATUS, DRIVER_LICENSE, MEM_PROFILEIMG, 
+		    TEMP_PW_YN, ENABLED, WORK_VACA, DRIVE_VOLUME, MEM_CARD_IMAGE, MEM_CARD_MEMO, MAIL_VOLUME, P.POS_NAME, D.DEPT_NAME
+		from
+		    member m, position p, department d
+		where
+			1 = 1
+			and m.pos_no = p.pos_no
+			and m.dept_no = d.dept_no
+		order by mem_no
+  	</select>
+  	
+  	<insert id="upload" parameterType="MemberVO">
+  		insert into MEMBER (
+ 			POS_NO
+			,DEPT_NO
+			,MEM_ID
+			,MEM_PW
+			,MEM_NAME
+			,MEM_TEL
+			,MEM_EMAIL
+			,MEM_ADDR1
+			,HIRE_DATE
+			,DRIVER_LICENSE
+			,MEM_PROFILEIMG
+			,TEMP_PW_YN
+			,MAIL_VOLUME
+			,MEM_NO	
+  		) values (
+  			#{posNo}, #{deptNo}, #{memId}, #{memPw}, #{memName}, #{memTel}, #{memEmail}, #{memAddr1}, TO_CHAR(TO_DATE(#{hireDate},'RRRRDDD'), 'YYYY/MM/DD')
+  			, #{driverLicense}, #{memProfileimg}, #{tempPwYn}, #{mailVolume}, #{memNo}
+  		)
+  	</insert>
+  	
+  	<select id="memCount" resultType="int">
+  		select
+  			count(*)
+  		from
+  			member
+  	</select>
+  	
+  	<select id="enabled1Mem" resultType="int">
+  		select
+  			count(*)
+  		from
+  			member
+  		where
+  			enabled = 1
+  	</select>
+  	
+  	<select id="enabled2Mem" resultType="int">
+  		select
+  			count(*)
+  		from
+  			member
+		where
+			enabled = 2
+  	</select>
+  	
+  	<select id="deptDetail" resultType="DepartmentVO" parameterType="DepartmentVO">
+  		select
+  			dept_no, dept_name
+  		from
+  			department
+  		where
+  			dept_no = #{deptNo}
+  	</select>
+  	
+  	<update id="deleteMem">
+  		update member
+		set enabled = 2
+		where mem_no = #{memberNo}
+  	</update>
+  	
+  	<select id="enabledCheck" resultType="int">
+  		select
+  			count(*)
+  		from
+  			member
+  		where
+  			mem_no = #{memberNo}
+  			and enabled = 1
+  	</select>
+  	
+  	<update id="changePos">
+  		update member
+  		set pos_no = #{posNo}
+  		where mem_no = #{memberNo}
+  	</update>
+  	
+  </mapper>

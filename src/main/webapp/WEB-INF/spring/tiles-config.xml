@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE tiles-definitions PUBLIC "-//Apache Software Foundation//DTD Tiles Configuration 3.0//EN" "http://tiles.apache.org/dtds/tiles-config_3_0.dtd">
+<tiles-definitions>
+
+	<definition name="mainTemplate" template="/WEB-INF/views/mainTemplate.jsp">
+		<put-attribute name="header" value="/WEB-INF/views/tiles/header.jsp"/>
+		<put-attribute name="category" value="/WEB-INF/views/tiles/category.jsp"/>
+		<put-attribute name="option" value="/WEB-INF/views/tiles/option.jsp"/>
+	</definition>
+
+	<definition name="homeTemplate" template="/WEB-INF/views/homeTemplate.jsp">
+		<put-attribute name="header" value="/WEB-INF/views/tiles/header.jsp"/>
+		<put-attribute name="category" value="/WEB-INF/views/tiles/category.jsp"/>
+		<put-attribute name="option" value="/WEB-INF/views/tiles/option.jsp"/>
+	</definition>
+
+	<definition name="adminTemplate" template="/WEB-INF/views/adminTemplate.jsp">
+		<put-attribute name="header" value="/WEB-INF/views/tiles/header.jsp"/>
+		<put-attribute name="sidebar" value="/WEB-INF/views/admin/sidebar.jsp"/>
+		<put-attribute name="option" value="/WEB-INF/views/tiles/option.jsp"/>
+	</definition>
+
+	<definition name="accountTemplate" template="/WEB-INF/views/accountTemplate.jsp">
+	</definition>
+	
+	<definition name="account/*" extends="accountTemplate">
+		<put-attribute name="content" value="/WEB-INF/views/account/{1}.jsp"/>
+	</definition>
+	
+	<definition name="home/*" extends="homeTemplate">
+		<put-attribute name="sidebar" value="/WEB-INF/views/home/sidebar.jsp"/>
+		<put-attribute name="content" value="/WEB-INF/views/home/{1}.jsp"/>
+	</definition>
+	
+	<definition name="chat/*" extends="homeTemplate">
+		<put-attribute name="sidebar" value="/WEB-INF/views/chat/sidebar.jsp"/>
+		<put-attribute name="content" value="/WEB-INF/views/chat/{1}.jsp"/>
+	</definition>
+	
+	<definition name="ffChat/*" extends="mainTemplate">
+		<put-attribute name="sidebar" value="/WEB-INF/views/ffChat/sidebar.jsp"/>
+		<put-attribute name="content" value="/WEB-INF/views/ffChat/{1}.jsp"/>
+	</definition>
+	
+	<definition name="mail/*" extends="mainTemplate">
+		<put-attribute name="sidebar" value="/WEB-INF/views/mail/sidebar.jsp"/>
+		<put-attribute name="content" value="/WEB-INF/views/mail/{1}.jsp"/>
+	</definition>
+	
+	<definition name="calendar/*" extends="mainTemplate">
+		<put-attribute name="content" value="/WEB-INF/views/calendar/{1}.jsp"/>
+		<put-attribute name="sidebar" value="/WEB-INF/views/calendar/sidebar.jsp"/>		
+	</definition>
+	
+	<definition name="drive/*" extends="mainTemplate">
+		<put-attribute name="sidebar" value="/WEB-INF/views/drive/sidebar.jsp"/>
+		<put-attribute name="content" value="/WEB-INF/views/drive/{1}.jsp"/>
+	</definition>
+	
+	<definition name="approval/*" extends="homeTemplate">
+		<put-attribute name="sidebar" value="/WEB-INF/views/approval/sidebar.jsp"/>
+		<put-attribute name="content" value="/WEB-INF/views/approval/{1}.jsp"/>
+	</definition>
+	
+	<definition name="attend/*" extends="mainTemplate">
+		<put-attribute name="sidebar" value="/WEB-INF/views/attend/sidebar.jsp"/>
+		<put-attribute name="content" value="/WEB-INF/views/attend/{1}.jsp"/>
+	</definition>
+	
+	<definition name="board/*" extends="mainTemplate">
+		<put-attribute name="sidebar" value="/WEB-INF/views/board/sidebar.jsp"/>
+		<put-attribute name="content" value="/WEB-INF/views/board/{1}.jsp"/>
+	</definition>
+	
+	<definition name="reservation/*" extends="mainTemplate">
+		<put-attribute name="sidebar" value="/WEB-INF/views/reservation/sidebar.jsp"/>
+		<put-attribute name="content" value="/WEB-INF/views/reservation/{1}.jsp"/>
+	</definition>
+	
+	
+	<definition name="todo/*" extends="mainTemplate">
+		<put-attribute name="sidebar" value="/WEB-INF/views/todo/sidebar.jsp"/>
+		<put-attribute name="content" value="/WEB-INF/views/todo/{1}.jsp"/>
+	</definition>
+	
+	<definition name="project/*" extends="mainTemplate">
+		<put-attribute name="sidebar" value="/WEB-INF/views/project/sidebar_mk.jsp"/>
+		<put-attribute name="content" value="/WEB-INF/views/project/{1}.jsp"/>
+	</definition>
+	
+	<definition name="survey/*" extends="mainTemplate">
+		<put-attribute name="sidebar" value="/WEB-INF/views/survey/sidebar.jsp"/>
+		<put-attribute name="content" value="/WEB-INF/views/survey/{1}.jsp"/>
+	</definition>
+	
+	<definition name="admin/*/*" extends="adminTemplate">
+		<put-attribute name="content" value="/WEB-INF/views/admin/{1}/{2}.jsp"/>
+	</definition>
+
+	<definition name="address/*" extends="mainTemplate">
+		<put-attribute name="content" value="/WEB-INF/views/address/{1}.jsp"/>
+		<put-attribute name="sidebar" value="/WEB-INF/views/address/sidebar.jsp"/>		
+	</definition>
+
+</tiles-definitions>

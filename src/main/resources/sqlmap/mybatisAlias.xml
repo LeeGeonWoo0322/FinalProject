@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration
+  PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-config.dtd">
+  <configuration>
+  
+  <!-- 카멜케이스로 읽어주는 역할 -->
+  	<settings>
+  		<setting name="mapUnderscoreToCamelCase" value="true"/>
+  		<setting name="jdbcTypeForNull" value="VARCHAR"/>
+  	</settings>
+  	
+  	<!-- 자주 사용하는 타입의 별칭을 셋팅 -->
+  	<typeAliases>
+ <!--  		<typeAlias type="kr.or.ddit.vo.Board" alias="board"/>
+  		<typeAlias type="kr.or.ddit.vo.CrudMember" alias="crudMember"/>
+  		<typeAlias type="kr.or.ddit.vo.CrudMemberAuth" alias="crudMemberAuth"/> -->
+  		
+  		<package name="kr.or.ddit.common.account.vo"/>
+  		<package name="kr.or.ddit.common.approval.vo"/>
+  		<package name="kr.or.ddit.common.attend.vo"/>
+  		<package name="kr.or.ddit.common.board.vo"/>
+  		<package name="kr.or.ddit.common.calendar.vo"/>
+  		<package name="kr.or.ddit.common.chat.vo"/>
+  		<package name="kr.or.ddit.common.drive.vo"/>
+  		<package name="kr.or.ddit.common.file.vo"/>
+  		<package name="kr.or.ddit.common.mail.vo"/>
+  		<package name="kr.or.ddit.common.project.vo"/>
+  		<package name="kr.or.ddit.common.security.vo"/>
+  		<package name="kr.or.ddit.common.todoList.vo"/>
+  		<package name="kr.or.ddit.common.alarm.vo"/>
+  		<package name="kr.or.ddit.common.address.vo"/>
+  		<package name="kr.or.ddit.common.ffChat.vo"/>
+  		<package name="kr.or.ddit.common.survey.vo"/>
+  		<package name="kr.or.ddit.common.reservation.vo"/>
+  		
+  		<package name="kr.or.ddit.admin.mail.vo"/>
+  		
+
+  	</typeAliases>
+  </configuration>

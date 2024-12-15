@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+ "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.common.alarm.mapper.IAlarmMapper">
+
+ <insert id="insertAlarm" parameterType="AlarmVO" useGeneratedKeys="true">
+ 
+ 	<selectKey keyProperty="alarmNo" resultType="int" order="BEFORE">
+  		select alarm_seq.nextval from dual
+  	</selectKey>
+ 	insert into alarm(
+ 		ALARM_NO,ALARM_CATEGORY,ALARM_CONTENT, REG_DATE, IS_READ,ALARM_DEL_YN,RECEIVER_NO,ALARM_URL
+ 	)values(
+ 		#{alarmNo}, #{alarmCategory}, #{alarmContent},sysdate,'N','N', #{receiverNo}, #{alarmUrl}
+ 	)
+ </insert>
+ 
+ <select id="chkBanAlarm" parameterType="AlarmBanVO" resultType="int">
+ 	SELECT
+	    count(*)
+	FROM
+	    alarm_ban
+	where mem_no = #{memNo}
+	and tech_category = #{techCategory}
+ </select>
+ 
+ <select id="getAlarm" parameterType="int" resultType="AlarmVO">
+	 SELECT
+	    alarm_no
+	  , alarm_category
+	  , alarm_title
+	  , alarm_content
+	  , TO_CHAR(reg_date, 'YYYY-MM-DD') AS reg_date
+	  , is_read
+	  , alarm_del_yn
+	  , receiver_no
+	  , alarm_url
+	FROM
+	    alarm
+	where alarm_no=#{alarmNo}
+	ORDER BY reg_date DESC
+ </select>
+ 
+<select id="getUnreadAlarmCount" parameterType="int" resultType="int">
+    SELECT COUNT(*)
+    FROM alarm
+    WHERE is_read = 'N' and receiver_no=#{receiverNo} and ALARM_DEL_YN='N'
+</select>
+ 
+<select id="notificationList" parameterType="int" resultType="AlarmVO">
+    SELECT * FROM alarm
+    WHERE RECEIVER_NO = #{receiverNo} 
+      AND ALARM_DEL_YN = 'N'
+    ORDER BY REG_DATE DESC
+</select>
+ 
+ <update id="readNotification" parameterType="AlarmVO">
+ 	UPDATE alarm
+	SET
+		IS_READ = 'Y'
+	WHERE
+		alarm_no = #{alarmNo}
+ </update>
+ 
+ <update id="markAllAsRead" parameterType="int">
+ 	UPDATE alarm
+	SET
+		IS_READ = 'Y'
+	WHERE
+		RECEIVER_NO = #{receiverNo}
+ </update>
+ 
+ <update id="deleteNotification" parameterType="int">
+  	UPDATE alarm
+	SET
+		ALARM_DEL_YN = 'Y'
+	WHERE
+		alarm_no = #{alarmNo}
+ </update>
+</mapper>

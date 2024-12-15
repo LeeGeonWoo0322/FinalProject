@@ -1,0 +1,514 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.common.calendar.mapper.IScheduleMapper">
+	
+	<resultMap id="SchdlMap" type="ScheduleVO">
+		<result property="schdlNo" column="schdl_no" />
+        <result property="calNo" column="cal_no" />
+        <result property="memNo" column="mem_no" />
+        <result property="deptNo" column="dept_no" />
+        <result property="schdlName" column="schdl_name" />
+        <result property="schdlGroup" column="schdl_group" />
+        <result property="schdlPlace" column="schdl_place" />
+        <result property="startDate" column="start_date" />
+        <result property="endDate" column="end_date" />
+        <result property="startTime" column="start_time" />
+        <result property="endTime" column="end_time" />
+        <result property="alldayYn" column="allday_yn" />
+        <result property="schdlColor" column="schdl_color" />
+        <result property="reptYn" column="rept_yn" />
+        <result property="schdlContent" column="schdl_content" />
+        <collection property="schdlAttendeeVO" ofType="SchdlAttendeeVO" resultMap="attendeeMap"/>
+	</resultMap>
+	
+	<resultMap type="SchdlAttendeeVO" id="attendeeMap">
+            <id property="attendNo" column="attend_no" />
+            <result property="memNo" column="mem_no" />
+            <result property="schdlNo" column="schdl_no" />
+            <result property="memName" column="mem_name" />
+            <result property="deptName" column="dept_name" />
+	</resultMap>
+	
+	<select id="getMemberDetail" parameterType="String" resultType="MemberVO">
+		SELECT
+		    mem_no
+		   ,pos_no
+		   ,dept_no
+		   ,wt_no
+		   ,mem_id
+		   ,mem_pw
+		   ,mem_name
+		   ,mem_tel
+		   ,mem_email
+		   ,mem_addr1
+		   ,mem_addr2
+		   ,mem_post
+		   ,hire_date
+		   ,mem_status
+		   ,driver_license
+		   ,mem_profileimg
+		   ,temp_pw_yn
+		   ,enabled
+		   ,work_vaca
+		   ,drive_volume
+		   ,mem_card_image
+		   ,mem_card_memo
+		FROM
+		    member
+		where
+			mem_id = #{memId}
+	</select>
+
+	<insert id="register" parameterType="ScheduleVO" useGeneratedKeys="true">
+		<selectKey order="BEFORE" keyProperty="schdlNo" resultType="int">
+			select seq_schdl.nextval from dual
+		</selectKey>
+		insert into schdl(
+			SCHDL_NO, MEM_NO, DEPT_NO, SCHDL_NAME, SCHDL_GROUP, SCHDL_PLACE, SCHDL_CONTENT, ALLDAY_YN, START_DATE, END_DATE, START_TIME, END_TIME , SCHDL_OPEN
+		)values(
+			#{schdlNo}, #{memNo}, #{deptNo}, #{schdlName}, #{schdlGroup}, #{schdlPlace}, #{schdlContent}, 'N', #{startDate}, #{endDate}, #{startTime}, #{endTime} , #{schdlOpen}
+		)
+	</insert>
+	
+	<insert id="insertMembers" parameterType="SchdlAttendeeVO">
+		INSERT INTO schdl_attendee (
+		    attend_no
+		   ,schdl_no
+		   ,mem_no
+		) VALUES (
+		    seq_attend_no.nextval
+		   ,#{schdlNo}
+		   ,#{memNo}
+		)
+	</insert>
+	
+	
+	<insert id="modalRegister" parameterType="ScheduleVO" >
+		insert into schdl(
+			SCHDL_NO, MEM_NO, DEPT_NO, SCHDL_NAME, SCHDL_GROUP, SCHDL_PLACE, ALLDAY_YN, START_DATE, END_DATE
+		)values(
+			seq_schdl.nextval, #{memNo},#{deptNo} , #{schdlName}, #{schdlGroup}, #{schdlPlace}, 'N', #{startDate}, #{endDate}
+		)
+	</insert>
+	
+	<select id="list" resultType="scheduleVO" >
+		SELECT
+		    schdl_no
+		   ,cal_no
+		   ,mem_no
+		   ,dept_no
+		   ,schdl_name
+		   ,schdl_group
+		   ,schdl_place
+		   ,start_date
+		   ,end_date
+		   ,start_time
+		   ,end_time
+		   ,allday_yn
+		   ,schdl_color
+		   ,rept_yn
+		   ,schdl_content
+		FROM
+		    schdl
+		where schdl_group = 'group'
+	</select>
+	
+	<resultMap id="memberResultMap" type="MemberVO">
+	   <result property="memNo" column="mem_no" />
+	   <result property="posNo" column="pos_no" />
+	   <result property="deptNo" column="dept_no" />
+	   <result property="wtNo" column="wt_no" />
+	   <result property="memId" column="mem_id" />
+	   <result property="memPw" column="mem_pw" />
+	   <result property="memName" column="mem_name" />
+	   <result property="memTel" column="mem_tel" />
+	   <result property="memEmail" column="mem_email" />
+	   <result property="memAddr1" column="mem_addr1" />
+	   <result property="memAddr2" column="mem_addr2" />
+	   <result property="memPost" column="mem_post" />
+	   <result property="hireDate" column="hire_date" />
+	   <result property="memStatus" column="mem_status" />
+	   <result property="driverLicense" column="driver_license" />
+	   <result property="memProfileimg" column="mem_profileimg" />
+	   <result property="tempPwYn" column="temp_pw_yn" />
+	   <result property="enabled" column="enabled" />
+	   <result property="workVaca" column="work_vaca" />
+	   <result property="driveVolume" column="drive_volume" />
+	   <result property="memCardImage" column="mem_card_image" />
+	   <result property="memCardMemo" column="mem_card_memo" />
+	</resultMap>
+
+	
+	<select id="getMemberNumList" resultMap="memberResultMap" parameterType="MemberVO" >
+		SELECT
+		    mem_no
+		   ,pos_no
+		   ,dept_no
+		   ,wt_no
+		   ,mem_id
+		   ,mem_pw
+		   ,mem_name
+		   ,mem_tel
+		   ,mem_email
+		   ,mem_addr1
+		   ,mem_addr2
+		   ,mem_post
+		   ,hire_date
+		   ,mem_status
+		   ,driver_license
+		   ,mem_profileimg
+		   ,temp_pw_yn
+		   ,enabled
+		   ,work_vaca
+		   ,drive_volume
+		   ,mem_card_image
+		   ,mem_card_memo
+		FROM
+		    member
+	    WHERE mem_name IN
+	    <foreach item="name" index="index" collection="memNames" open="(" separator="," close=")">
+	        #{name}
+	    </foreach>
+	</select>
+	<select id="getMemberNames" resultType="scheduleVO" parameterType="MemberVO" >
+		SELECT
+		    schdl_no
+		   ,cal_no
+		   ,mem_no
+		   ,dept_no
+		   ,schdl_name
+		   ,schdl_group
+		   ,schdl_place
+		   ,start_date
+		   ,end_date
+		   ,start_time
+		   ,end_time
+		   ,allday_yn
+		   ,schdl_color
+		   ,rept_yn
+		   ,schdl_content
+		   ,schdl_open
+		FROM
+		    schdl
+		where mem_no = #{memNo}
+		and schdl_group = 'my'
+		and schdl_open = 'Y'
+	</select>
+	
+	<select id="vacationSchdl" parameterType="list" resultType="scheduleVO" >
+		SELECT 
+		    uv.mem_no,
+		    CONCAT(m.mem_name, ' 연차') AS schdl_name, 
+		    uv.vct_start AS start_date,
+		    uv.vct_end AS end_date,
+		    uv.vct_cont AS schdl_content
+		FROM 
+		    use_vacation uv
+		JOIN 
+		    member m ON uv.mem_no = m.mem_no 
+		WHERE
+			uv.mem_no IN  
+		    <foreach item="memNo" collection="list" open="(" separator="," close=")">
+	            #{memNo}
+	        </foreach>
+	</select>
+
+	
+	<select id="selectOne" parameterType="int" resultType="ScheduleVO">
+		SELECT
+		    schdl_no
+		   ,cal_no
+		   ,mem_no
+		   ,dept_no
+		   ,schdl_name
+		   ,schdl_group
+		   ,schdl_place
+		   ,start_date
+		   ,end_date
+		   ,start_time
+		   ,end_time
+		   ,allday_yn
+		   ,schdl_color
+		   ,rept_yn
+		   ,schdl_content
+		FROM
+		    schdl
+		where schdl_no = #{schdlNo}
+	</select>
+	
+	<update id="update" parameterType="ScheduleVO">
+		UPDATE schdl
+	    SET 
+	    	schdl_name = #{schdlName}
+	    	,start_date = #{startDate}
+	    	,end_date = #{endDate}
+	    	,start_time = #{startTime}
+	    	,end_time = #{endTime}
+	    	,schdl_place = #{schdlPlace}
+	    	,schdl_content = #{schdlContent}
+	    	
+	    where schdl_no = #{schdlNo}
+	</update>
+	
+	<delete id="deleteAttendees" parameterType="int">
+	    DELETE FROM schdl_attendee
+	    WHERE schdl_no = #{schdlNo}
+	</delete>
+	
+	<insert id="insertAttendee" parameterType="SchdlAttendeeVO">
+	    INSERT INTO schdl_attendee (attend_no, schdl_no, mem_no)
+	    VALUES (seq_attend_no.nextval, #{schdlNo}, #{memNo})
+	</insert>
+	
+	<select id="selectAttendees" parameterType="int" resultType="SchdlAttendeeVO">
+	    SELECT 
+	        a.attend_no AS attendNo,
+	        a.schdl_no AS schdlNo,
+	        a.mem_no AS memNo,
+	        m.mem_name AS memName,
+	        d.dept_name AS deptName
+	    FROM 
+	        schdl_attendee a
+	        JOIN member m ON a.mem_no = m.mem_no
+	        JOIN department d ON m.dept_no = d.dept_no
+	    WHERE 
+	        a.schdl_no = #{schdlNo}
+	</select>
+
+	
+	<update id="eventUpdate" parameterType="ScheduleVO">
+	UPDATE schdl
+    SET 
+    	schdl_name = #{schdlName}
+    	,start_date = #{startDate}
+    	,end_date = #{endDate}
+    	,schdl_place = #{schdlPlace}
+    	,schdl_content = #{schdlContent}
+    	,mem_no = #{memNo}
+    where schdl_no = #{schdlNo}
+	</update>
+	
+	<delete id="delete" parameterType="int">
+		delete from schdl
+		where schdl_no = #{schdlNo}
+	</delete>
+
+	<select id="getMemberList" resultType="MemberVO" parameterType="int">
+		SELECT
+		    mem_no
+		   ,pos_no
+		   ,dept_no
+		   ,wt_no
+		   ,mem_id
+		   ,mem_pw
+		   ,mem_name
+		   ,mem_tel
+		   ,mem_email
+		   ,mem_addr1
+		   ,mem_addr2
+		   ,mem_post
+		   ,hire_date
+		   ,mem_status
+		   ,driver_license
+		   ,mem_profileimg
+		   ,temp_pw_yn
+		   ,enabled
+		   ,work_vaca
+		   ,drive_volume
+		   ,mem_card_image
+		   ,mem_card_memo
+		FROM
+		    member
+	    where dept_no = #{deptNo}
+	</select>
+	
+	<select id="getMySchedule" resultType="ScheduleVO" parameterType="int">
+		SELECT
+		    schdl_no
+		   ,cal_no
+		   ,mem_no
+		   ,dept_no
+		   ,schdl_name
+		   ,schdl_group
+		   ,schdl_place
+		   ,start_date
+		   ,end_date
+		   ,start_time
+		   ,end_time
+		   ,allday_yn
+		   ,schdl_color
+		   ,rept_yn
+		   ,schdl_content
+		   ,schdl_open 
+		FROM
+		    schdl
+	    where mem_no = #{memNo}
+	</select>
+	
+	<select id="myList" resultMap="attenMap">
+		SELECT
+		    a.schdl_no
+		   ,a.cal_no
+		   ,a.mem_no
+		   ,a.dept_no
+		   ,a.schdl_name
+		   ,a.schdl_group
+		   ,a.schdl_place
+		   ,a.start_date
+		   ,a.end_date
+		   ,a.start_time
+		   ,a.end_time
+		   ,a.allday_yn
+		   ,a.schdl_color
+		   ,a.rept_yn
+		   ,a.schdl_content
+		   ,a.schdl_open
+		   ,b.attend_no
+           ,b.mem_no
+		   
+		FROM
+		    schdl a
+		LEFT OUTER JOIN SCHDL_ATTENDEE b
+		ON
+			a.schdl_no = b.schdl_no
+		LEFT OUTER JOIN member m 
+		ON 
+			b.mem_no = m.mem_no
+	    where a.mem_no = #{memNo}
+	</select>
+	
+	<resultMap id="attenMap" type="ScheduleVO">
+		<result property="schdlNo" column="schdl_no" />
+        <result property="calNo" column="cal_no" />
+        <result property="memNo" column="mem_no" />
+        <result property="deptNo" column="dept_no" />
+        <result property="schdlName" column="schdl_name" />
+        <result property="schdlGroup" column="schdl_group" />
+        <result property="schdlPlace" column="schdl_place" />
+        <result property="startDate" column="start_date" />
+        <result property="endDate" column="end_date" />
+        <result property="startTime" column="start_time" />
+        <result property="endTime" column="end_time" />
+        <result property="alldayYn" column="allday_yn" />
+        <result property="schdlColor" column="schdl_color" />
+        <result property="reptYn" column="rept_yn" />
+        <result property="schdlContent" column="schdl_content" />
+        <result property="schdlOpen" column="schdl_open" />
+        <collection property="memNos" resultMap="attendMap"/>
+	</resultMap>
+	
+	<resultMap type="SchdlAttendeeVO" id="attendMap">
+            <id property="attendNo" column="attend_no" />
+            <result property="memNo" column="mem_no" />
+            <result property="schdlNo" column="schdl_no" />
+	</resultMap>
+	
+	<select id="deptList" resultType="DepartmentVO">
+   		SELECT DISTINCT 
+		    dept_no, 
+		    dept_name
+		FROM 
+		    department
+		ORDER BY 
+		    dept_no ASC
+	</select>
+	
+	<select id="groupAddress" resultType="scheduleVO" parameterType="int" >
+		SELECT
+		    schdl_no
+		   ,cal_no
+		   ,mem_no
+		   ,dept_no
+		   ,schdl_name
+		   ,schdl_group
+		   ,schdl_place
+		   ,start_date
+		   ,end_date
+		   ,start_time
+		   ,end_time
+		   ,allday_yn
+		   ,schdl_color
+		   ,rept_yn
+		   ,schdl_content
+		FROM
+		    schdl
+		where dept_no = #{deptNo}
+		and schdl_group = 'group'
+	</select>
+	
+	<select id="getAttendNo"  parameterType="int" resultType="MemberVO">
+		SELECT
+		    attend_no
+		FROM
+		    schdl_attendee
+		WHERE schdl_no = #{schdlNo}
+	</select>
+	
+	<select id="calendarDetail" parameterType="ScheduleVO" resultMap="SchdlMap">
+	    SELECT
+	        s.schdl_no,
+	        s.cal_no,
+	        s.mem_no,
+	        s.dept_no,
+	        s.schdl_name,
+	        s.schdl_group,
+	        s.schdl_place,
+	        s.start_date,
+	        s.end_date,
+	        s.start_time,
+	        s.end_time,
+	        s.allday_yn,
+	        s.schdl_color,
+	        s.rept_yn,
+	        s.schdl_content,
+	        s.schdl_open,
+	        a.attend_no AS attend_no,
+	        a.mem_no AS mem_no,
+	        m.mem_name AS mem_name,
+	        d.dept_name AS dept_name
+	    FROM
+	        schdl s
+	    LEFT JOIN schdl_attendee a ON s.schdl_no = a.schdl_no
+	    LEFT JOIN member m ON a.mem_no = m.mem_no
+	    LEFT JOIN department d ON m.dept_no = d.dept_no
+	    WHERE
+	        s.schdl_no = #{schdlNo}
+	</select>
+	
+	<insert id="attendInsert" parameterType="ScheduleVO"> 
+		INSERT INTO schdl_attendee (
+		    attend_no
+		   ,schdl_no
+		   ,mem_no
+		) VALUES (
+		    seq_attend_no.nextval
+		   ,#{schdlNo}
+		   ,#{memNo}
+		)
+	</insert>
+	
+	<select id="approveList" parameterType="int" resultType="UseVacationVO">
+		SELECT
+		    use_vct_no
+		   ,vct_type_no
+		   ,mem_no
+		   ,use_dt
+		   ,vct_cont
+		   ,vct_start
+		   ,vct_end
+		FROM
+		    use_vacation
+		where mem_no = #{memNo}	
+	</select>
+	
+	<select id="getMemNos" parameterType="list" resultType="int">
+		SELECT mem_no
+        FROM member
+        WHERE mem_name IN
+        <foreach item="name" collection="list" open="(" separator="," close=")">
+            #{name}
+        </foreach>
+	</select>
+</mapper>

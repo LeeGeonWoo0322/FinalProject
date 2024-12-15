@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  <mapper namespace="kr.or.ddit.common.attend.mapper.IAttendanceMapper">
+  
+  	<resultMap type="MemberVO" id="memAttend">
+  		<id property="memNo" column="member_no"/>
+  		<result property="memNo" column="mem_no" />
+		<result property="posNo" column="pos_no" />
+		<result property="deptNo" column="dept_no" />
+		<result property="memName" column="mem_name" />
+		<result property="deptName" column="dept_name"/>
+		<result property="posName" column="pos_name"/>
+		<collection property="memAttendance" resultMap="attendanceMap"/>
+  	</resultMap>
+  	
+  	<resultMap type="AttendanceVO" id="attendanceMap">
+  		<id property="attendanceNo" column="attendance_no"/>
+  		<result property="attendanceNo" column="attendance_no" />
+		<result property="attendanceDate" column="attendance_date" />
+		<result property="inTime" column="in_time" />
+		<result property="outTime" column="out_time" />
+		<result property="movertimeTime" column="movertime_time" />
+		<result property="dateD" column="date_d" />
+  	</resultMap>
+  	
+  	<insert id="gWork" parameterType="AttendanceVO">
+  		INSERT INTO ATTENDANCE (
+		    attendance_no,
+		    mem_no,
+		    attendance_date,
+		    in_time,
+		    monover_time,
+		    movertime_time,
+		    date_d
+		) VALUES (
+		    seq_attend_no.NEXTVAL,
+		    #{memNo},
+		    #{attendanceDate},
+		    #{inTime},
+		    '00:00:00',
+		    <choose>
+		    	<when test="attendanceDate.substring(attendanceDate.length-2) != '01' or dateD == 1">
+		    		#{monoverTime},
+		    	</when>
+		    	<otherwise>
+		    		'00:00:00',
+		    	</otherwise>
+		    </choose>
+<!-- 		    '00:00:00', -->
+		    #{dateD}
+		)
+  	</insert>
+  	
+  	<update id="lWork" parameterType="AttendanceVO">
+  		UPDATE attendance
+    		SET
+        		out_time = #{outTime}
+		WHERE
+			1=1
+			AND mem_no = #{memNo}
+	    	AND	attendance_date = #{attendanceDate}
+	    	AND out_time is null
+  	</update>
+  	
+  	<select id="getAttNo" parameterType="AttendanceVO" resultType="AttendanceVO">
+  		select 
+  			attendance_no
+  		from 
+  			attendance
+  		where
+  			1=1
+  			AND mem_no = #{memNo}
+  			AND attendance_date = #{attendanceDate}
+  	</select>
+  	
+  	<select id="glWorkTime" parameterType="AttendanceVO" resultType="AttendanceVO">
+  		select
+  			in_time, out_time, overtime_time
+  		from
+  			attendance
+  		where
+  			1=1
+  			AND mem_no = #{memNo}
+  			AND attendance_date = #{attendanceDate}
+  	</select>
+  	
+  	<select id="overTimeUpd" parameterType="AttendanceVO" resultType="AttendanceVO">
+  		select
+  			in_time, out_time, overtime_time, movertime_time, attendance_date
+  		from
+  			attendance
+  		where
+  			1=1
+  			AND mem_no = #{memNo}
+  			AND attendance_date = #{attendanceDate}
+  	</select>
+  	
+  	<select id="otPrint" parameterType="AttendanceVO" resultType="AttendanceVO">
+  		select
+  			attendance_no, mem_no, attendance_date, in_time, out_time, overtime_time, attendance_reason, movertime_time, monover_time
+  		from
+  			(
+  				select
+  					attendance_no, mem_no, attendance_date, in_time, out_time, overtime_time, attendance_reason, movertime_time, monover_time
+  				from attendance
+  				where 
+  					1=1
+  					AND mem_no = #{memNo}
+<!--   					AND attendance_date = #{attendanceDate} -->
+  				order by
+  					attendance_date DESC
+  			)
+  		where rownum = 1
+  	</select>
+  	
+  	<update id="updOverTime" parameterType="AttendanceVO">
+  		update attendance
+  		set
+  			movertime_time = #{overtimeTime},
+  			monover_time = #{monoverTime}
+  		where
+  			1=1
+  			AND	mem_no = #{memNo}
+  			AND	attendance_date = #{attendanceDate}
+  	</update>
+  	
+  	<select id="curMonth" parameterType="AttendanceVO" resultType="AttendanceVO">
+  		select
+  			attendance_no, mem_no, attendance_date, in_time, out_time, overtime_time, monover_time,attendance_reason, movertime_time, date_d
+  		from
+  			attendance
+  		where
+  			1=1
+  			AND mem_no = #{memNo}
+  			AND to_char(attendance_date,'YYYY/MM') like '%'||#{attendanceDate}||'%'
+  		order by attendance_no desc
+  	</select>
+  	
+  	<update id="changeMemStatus" parameterType="AttendanceVO">
+  		update
+  			member
+  		set
+  			<if test="inTime != null">
+  				mem_status = '출근'
+  			</if>
+  			<if test="outTime != null">
+  				mem_status = '퇴근'
+  			</if>
+  		where
+  			1=1
+  			AND mem_no = #{memNo}
+  	</update>
+  	
+  	<select id="totalDeptList" parameterType="AttendanceVO" resultType="AttendanceVO">
+  		select
+		    *
+		from attendance at ,(
+		    select 
+		        m.mem_no, m.dept_no, m.mem_name, d.dept_name
+		    from
+		        department d, (
+		            select
+		                mem_no, dept_no, mem_name
+		            from
+		                member
+		            where
+		                dept_no = #{deptNo}
+		        )m
+		    where 
+		        mem_no != #{memNo}
+		        AND m.dept_no = d.dept_no
+		)ma
+		where
+		    1=1
+		    AND at.mem_no = ma.mem_no
+		    AND to_char(attendance_date,'YYYY/MM') like '%'||#{attendanceDate}||'%'
+		order by attendance_date desc
+  	</select>
+  	
+  	<update id="updAttend">
+  		update
+  			attendance
+  		set
+  			<choose>
+  				<when test="outTime == null">
+  					in_time = #{inTime}
+  				</when>
+  				<otherwise>
+  					out_time = #{outTime}
+  				</otherwise>
+  			</choose>
+  		where
+  			1=1
+  			AND attendance_no = #{attendanceNo}
+  	</update>
+  	
+  	<select id="deptWeekAttend" parameterType="AttendanceVO" resultMap="memAttend">
+  		select
+		    m.MEM_NO, m.POS_NO, m.DEPT_NO, MEM_NAME,
+		    DEPT_NAME, POS_NAME,
+		    ATTENDANCE_NO, ATTENDANCE_DATE, IN_TIME, OUT_TIME, MOVERTIME_TIME, DATE_D 
+		from member m left outer join attendance a on(m.mem_no = a.mem_no)
+		              left outer join position p on(m.pos_no = p.pos_no)
+		              left outer join department d on(m.dept_no = d.dept_no)
+		where m.dept_no = 7
+		AND to_char(a.attendance_date,'yyyy-mm') like '%2024-10%'
+<!--   		select -->
+<!-- 		    * -->
+<!-- 		from member m, attendance a, position p, department d -->
+<!-- 		where -->
+<!-- 		    m.dept_no = #{deptNo} -->
+<!-- 		    AND to_char(a.attendance_date,'yyyy-mm') like '%'||#{attendanceDate}||'%' -->
+<!-- 		    AND m.pos_no = p.pos_no -->
+<!-- 		    AND m.dept_no = d.dept_no -->
+<!-- 		    AND m.mem_no = a.mem_no -->
+  	</select>
+  </mapper>

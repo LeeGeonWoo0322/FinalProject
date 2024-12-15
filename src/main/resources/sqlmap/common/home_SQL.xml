@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.common.home.mapper.IHomeMapper">
+
+	<select id="getMyScheduleList" parameterType="MemberVO" resultType="ScheduleVO">
+		SELECT
+		    schdl_no
+		  , cal_no
+		  , mem_no
+		  , dept_no
+		  , schdl_name
+		  , schdl_group
+		  , schdl_place
+		  , start_date
+		  , end_date
+		  , start_time
+		  , end_time
+		  , allday_yn
+		  , schdl_color
+		  , rept_yn
+		  , schdl_content
+		  , schdl_open
+		FROM
+		    schdl
+		WHERE
+			dept_no = #{deptNo}
+	</select>
+	
+	<select id="getScheduleList" parameterType="ScheduleVO" resultType="ScheduleVO">
+		SELECT
+		    schdl_no
+		  , cal_no
+		  , mem_no
+		  , dept_no
+		  , schdl_name
+		  , schdl_group
+		  , schdl_place
+		  , start_date
+		  , end_date
+		  , start_time
+		  , end_time
+		  , allday_yn
+		  , schdl_color
+		  , rept_yn
+		  , schdl_content
+		  , schdl_open
+		FROM
+		    schdl
+		WHERE
+			dept_no = #{deptNo}	and start_date = #{startDate}
+		ORDER BY
+			start_time asc
+	</select>
+
+</mapper>

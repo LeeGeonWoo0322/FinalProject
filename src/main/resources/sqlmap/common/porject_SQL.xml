@@ -1,0 +1,981 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper	namespace="kr.or.ddit.common.project.mapper.IProjectMapper">
+
+	<resultMap type="SiderVO" id="siderMap">
+		<id property="projectNo" column="project_no"/>
+		<result property="mngPicNo" column="mng_pic_No" />
+		<result property="proAttMemNo" column="pa_mem_no" />
+		<result property="workPicMemNo" column="pic_mem_no" />
+		<result property="workNo" column="work_no" />
+		<result property="favorY" column="favoritey" />
+		<result property="favorMem" column="favor_mem_no" />
+		<result property="workTitle" column="work_title" />
+		<result property="writerNo" column="writer_no" />
+	</resultMap>
+	
+
+	<resultMap type="ProjectVO" id="proMap">
+		<id property="projectNo" column="project_no" />
+		<result property="projectNo" column="project_no" />
+		<result property="mngPicNo" column="mng_pic_no" />
+		<result property="projectTitle" column="project_title" />
+		<result property="regDate" column="p_reg_date" />
+		<result property="endDate" column="p_end_date" />
+		<result property="mngMemName" column="mng_mem_name" />
+		<result property="mngPosName" column="mng_pos_name" />
+		<collection property="workNoList" resultMap="workMap" />
+		<collection property="paList" resultMap="paMemMap" />
+	</resultMap>
+
+	<resultMap type="WorkVO" id="workMap">
+		<id property="workNo" column="work_no" />
+		<result property="workNo" column="work_no" />
+		<result property="projectNo" column="project_no" />
+		<result property="writerNo" column="writer_no" />
+		<result property="regDate" column="w_reg_date" />
+		<result property="endDate" column="w_end_date" />
+		<result property="fileNo" column="file_no" />
+		<result property="workPrograss" column="work_prograss" />
+		<result property="field" column="field" />
+		<result property="workIntro" column="work_intro" />
+		<result property="workTitle" column="work_title" />
+		<result property="favorY" column="favoritey" />
+		<result property="favorMem" column="favor_mem_no" />
+		<collection property="checkList" resultMap="checkMap" />
+		<collection property="fileDetailList" resultMap="fileMap" />
+		<collection property="picList" resultMap="picMap" />
+		<collection property="cmtList" resultMap="cmntMap" />
+	</resultMap>
+
+
+	<resultMap type="CheckListVO" id="checkMap">
+		<id property="clNo" column="cl_no" />
+		<result property="clNo" column="cl_no" />
+		<result property="workNo" column="work_no" />
+		<result property="clName" column="cl_name" />
+		<result property="checkYn" column="check_yn" />
+		<result property="checkDate" column="cl_check_date" />
+		<result property="memNo" column="cl_mem_no" />
+	</resultMap>
+
+	<resultMap type="WorkFavoriteVO" id="favorMap">
+		<id property="workNo" column="work_no" />
+		<id property="memNo" column="mem_no" />
+		<result property="workNo" column="work_no" />
+		<result property="workPrograss" column="work_prograss" />
+		<result property="workTitle" column="work_title" />
+		<result property="regDate" column="w_reg_date" />
+		<result property="endDate" column="w_end_date" />
+		<result property="favoriteY" column="favoritey" />
+	</resultMap>
+	
+
+<resultMap type="WorkVO" id="workFaMap">
+    <id property="workNo" column="work_no" />
+    <result property="projectNo" column="project_no" />
+    <result property="writerNo" column="writer_no" />
+    <result property="regDate" column="w_reg_date" />
+    <result property="endDate" column="w_end_date" />
+    <result property="fileNo" column="file_no" />
+    <result property="workPrograss" column="work_prograss" />
+    <result property="field" column="field" />
+    <result property="workIntro" column="work_intro" />
+    <result property="workTitle" column="work_title" />
+</resultMap>
+	
+	<resultMap type="ProjectAttendeeVO" id="paMemMap">
+		<id property="projectNo" column="project_no" />
+		<id property="memNo" column="pa_mem_no" />
+	</resultMap>
+
+
+
+	<resultMap type="WorkComentVO" id="cmntMap">
+		<id property="cmntNo" column="cmnt_no" />
+		<result property="workNo" column="cm_work_no" />
+		<result property="cmntContent" column="cmnt_content" />
+		<result property="regDate" column="cm_reg_date" />
+		<result property="writerNo" column="writer_no" />
+		<result property="memName" column="mem_name" />
+		<result property="posName" column="pos_name" />
+	</resultMap>
+
+	<resultMap type="PicNMVO" id="picMap">
+		<id property="workNo" column="work_no" />
+		<id property="memNo" column="pic_mem_no" />
+		<result property="memName" column="m_mem_name"/>
+	</resultMap>
+
+	<resultMap type="FilesDetailVO" id="fileMap">
+		<id property="fileNo" column="file_no" />
+		<result property="fileDetailNo" column="file_detail_no" />
+		<result property="filePath" column="file_path" />
+		<result property="fileSize" column="file_size" />
+		<result property="fileMime" column="file_mime" />
+		<result property="fileOriginalname" column="file_originalname" />
+		<result property="fileUploadname" column="file_uploadname" />
+		<result property="regDate" column="reg_date" />
+		<result property="memNo" column="mem_no" />
+		<result property="delYn" column="del_yn" />
+		<result property="downloadCnt" column="download_cnt" />
+		<result property="recDelYn" column="rec_del_yn" />
+	</resultMap>
+
+
+	<resultMap type="MemberVO" id="memMap">
+		<id property="memNo" column="m_mem_no" />
+		<id property="memName" column="m_mem_name" />
+	</resultMap>
+
+
+	<resultMap type="DepartmentVO" id="depMap">
+		<id property="deptNo" column="dept_no" />
+		<result property="deptName" column="dept_name" />
+	</resultMap>
+
+	<resultMap type="PositionVO" id="posMap">
+		<id property="posNo" column="pos_no" />
+		<result property="posName" column="pos_name" />
+	</resultMap>
+	
+
+
+
+
+
+
+
+
+	<insert id="insertProject" parameterType="ProjectVO"
+		useGeneratedKeys="true">
+		<selectKey keyProperty="projectNo" order="BEFORE"
+			resultType="int">
+			select seq_project_no.nextval from dual
+		</selectKey>
+		INSERT INTO project (
+		project_no
+		, mng_pic_no
+		, project_title
+		, reg_date 
+		, end_date
+		) VALUES (
+		#{projectNo}
+		, #{mngPicNo}
+		, #{projectTitle}
+		, sysdate
+		, #{endDate}
+		)
+
+	</insert>
+
+	<select id="detailProject" parameterType="map"
+		resultMap="proMap">
+
+SELECT
+    p.project_no,
+    p.mng_pic_no,
+    p.project_title,
+    to_char(p.reg_date, 'YYYY-MM-DD') AS p_reg_date,
+    to_char(p.end_date, 'YYYY-MM-DD') AS p_end_date,
+    pa.mem_no pa_mem_no,
+    m.mem_name,
+    pos.pos_name,
+    w.work_no,
+    to_char(w.reg_date, 'YYYY-MM-DD') AS w_reg_date,
+    to_char(w.end_date, 'YYYY-MM-DD') AS w_end_date,
+    w.file_no,
+    w.work_prograss,
+    w.field,
+    w.work_intro,
+    w.work_title,
+    cl.cl_name,
+    cl.cl_no,
+    cl.check_yn,
+    to_char(cl.check_date, 'YYYY-MM-DD') AS cl_check_date,
+    cl.mem_no cl_mem_no,
+    cm.cmnt_no,
+    cm.cmnt_content,
+    to_char(cm.reg_date, 'YYYY-MM-DD') AS cm_reg_date,
+    cm.WRITER_NO,
+    wf.mem_no AS favorite_mem_no,
+    wf.favoritey,
+    fd.FILE_ORIGINALNAME,
+    fd.FILE_SIZE,
+    fd.FILE_DETAIL_NO
+
+FROM
+    project p
+LEFT JOIN work w ON p.project_no = w.project_no
+left join project_attendee pa on p.project_no = pa.project_no
+left join member m on p.mng_pic_no = m.mem_no
+left join POSITION pos on m.pos_no = pos.pos_no
+LEFT JOIN checkList cl ON w.work_no = cl.work_no
+LEFT JOIN work_favorite wf ON w.work_no = wf.work_no
+LEFT JOIN work_coment cm ON w.work_no = cm.work_no
+LEFT JOIN file_detail fd ON w.file_no = fd.file_no
+
+WHERE
+    p.project_no = #{projectNo}
+    AND (pa.mem_no = #{memNo} OR p.mng_pic_no = #{memNo})
+
+ORDER BY
+    w.work_no ASC
+
+
+	</select>
+	
+	<insert id="addProjectMem" parameterType="ProjectAttendeeVO">
+		INSERT INTO project_attendee (
+		mem_no
+		, project_no
+		) VALUES (
+		#{memNo}
+		, #{projectNo}
+		)
+
+	</insert>
+	
+	<insert id="addMem" parameterType="ProjectAttendeeVO">
+		INSERT INTO project_attendee (
+		mem_no
+		, project_no
+		) VALUES (
+		#{memNo}
+		, #{projectNo}
+		)
+
+	</insert>
+
+
+	<!-- 삭제해야함 -->
+	<insert id="favorite" parameterType="WorkFavoriteVO">
+		INSERT INTO work_favorite (
+		work_no
+		, mem_no
+		, favoritey
+		) VALUES (
+		#{workNo}
+		, #{memNo}
+		, #{favoriteY}
+		)
+
+
+	</insert>
+
+	<select id="detailMem" parameterType="int" resultType="int">
+		SELECT
+		mem_no
+		, project_no
+		FROM
+		project_attendee
+		where project_no = #{projectNo}
+	</select>
+
+	<insert id="insertWorkFile" parameterType="FilesVO"
+		useGeneratedKeys="true" keyProperty="fileNo">
+
+		<selectKey keyProperty="fileNo" resultType="int"
+			order="BEFORE">
+			select seq_FILES.nextval from dual
+		</selectKey>
+  
+		INSERT INTO files (
+		file_no,
+		file_category,
+		mem_no
+		) VALUES (
+		#{fileNo},
+		#{fileCategory},
+		#{memNo}
+		)
+	</insert>
+
+	<insert id="insertWortk" parameterType="WorkVO"
+		useGeneratedKeys="true">
+		<selectKey keyProperty="workNo" resultType="int"
+			order="BEFORE">
+			select SEQ_WORK_NO.nextval from dual
+		</selectKey>
+		INSERT INTO work (
+		work_no
+		, project_no
+		, writer_no
+		, reg_date
+		, end_date
+		, file_no
+		, work_prograss
+		, Field
+		, work_intro
+		, work_title
+		) VALUES (
+		#{workNo}
+		, #{projectNo}
+		, #{writerNo}
+		, sysdate
+		, #{endDate}
+		, #{fileNo}
+		, default
+		, default
+		, #{workIntro}
+		, #{workTitle}
+		)
+
+	</insert>
+
+
+	<insert id="insertWorkDetailFile" parameterType="FilesDetailVO">
+		<selectKey keyProperty="fileDetailNo" resultType="int"
+			order="BEFORE">
+			select SEQ_FILE_DETAIL.nextval from dual
+		</selectKey>
+		INSERT INTO file_detail (
+		file_detail_no,
+		file_no,
+		file_path,
+		file_size,
+		file_mime,
+		file_originalname,
+		file_uploadname,
+		reg_date,
+		mem_no
+		) VALUES (
+		#{fileDetailNo},
+		#{fileNo},
+		#{filePath},
+		#{fileSize},
+		#{fileMime},
+		#{fileOriginalname},
+		#{fileUploadname},
+		sysdate,
+		#{memNo}
+		)
+
+	</insert>
+
+	<insert id="addWorkMem" parameterType="PicNMVO">
+		INSERT INTO pic_nm (
+		work_no
+		, mem_no
+		) VALUES (
+		#{workNo}
+		, #{memNo}
+		)
+
+	</insert>
+
+	<insert id="insertCheck" parameterType="CheckListVO">
+		<selectKey keyProperty="clNo" resultType="int"
+			order="BEFORE">
+			select SEQ_CheckList_NO.nextval from dual
+		</selectKey>
+
+		INSERT INTO checklist (
+		cl_no
+		, work_no
+		, cl_name
+		) VALUES (
+		#{clNo}
+		, #{workNo}
+		, #{clName}
+		)
+
+	</insert>
+
+	<select id="workList" parameterType="int" resultMap="workMap">
+		SELECT
+		w.work_no
+		, w.project_no
+		, w.writer_no
+		, to_char(w.reg_date,'YYYY-MM-DD') w_reg_date
+		, to_char(w.end_date,'YYYY-MM-DD') w_end_date
+		, w.file_no
+		, w.work_prograss
+		, w.field
+		, w.work_intro
+		, w.work_title
+		,wf.favoritey
+		,wf.mem_no favor_mem_no
+		FROM
+		work w
+		left join work_favorite wf on w.work_no = wf.work_no
+		where w.project_no = #{projectNo}
+
+	</select>
+	<select id="workDetailList" parameterType="int"
+		resultMap="workMap">
+
+		SELECT
+		w.work_no
+		, w.project_no
+		, w.writer_no
+		, to_char(w.reg_date,'YYYY-MM-DD') w_reg_date
+		, to_char(w.end_date,'YYYY-MM-DD') w_end_date
+		, w.file_no
+		, w.work_prograss
+		, w.field
+		, w.work_intro
+		, w.work_title
+		, p.project_title
+		, cl_no
+		, cl_name
+		, check_yn
+		, check_date cl_check_date
+		, pic.mem_no pic_mem_no
+		, fd.file_detail_no
+		, fd.file_path
+		, fd.file_originalname
+		, cm.cmnt_no
+		, cm.cmnt_content
+		, to_date(cm.reg_date,'YYYY-MM-DD') cm_reg_date
+		, cm.writer_no
+		, pa.mem_no pa_mem_no
+		FROM
+		work w
+		left join project p on (w.project_no = p.project_no)
+		left join work_favorite wf on(wf.work_no = wf.work_no)
+		left join pic_nm pic on(w.work_no = pm.work_no)
+		left join checklist cl on( w.work_no = cl.work_no)
+		left join file_detail fd on(w.file_no = fd.file_no)
+		left join work_coment cm on(w.work_no = cm.work_no)
+		left join project_attendee pa on (w.project_no = pa.project_no)
+		where
+		w.project_no = #{project_no}
+
+	</select>
+
+	<select id="getfileDetail" parameterType="int"
+		resultType="FilesDetailVO">
+		SELECT
+		f.file_no
+		, f.del_yn
+		, fd.file_detail_no
+		, fd.file_path
+		, fd.file_size
+		, fd.file_mime
+		, fd.file_originalname
+		, fd.file_uploadname
+		, fd.reg_date
+		, fd.del_yn
+		, fd.download_cnt
+		, fd.rec_del_yn
+		FROM
+		files f right join file_detail fd on f.file_no = fd.file_no
+		where f.file_no
+		= #{fileNo} and fd.del_Yn = 'N'
+	</select>
+
+	<select id="picList" parameterType="int" resultMap="picMap">
+		SELECT 
+		    w.work_no
+		  , pic.mem_no AS pic_mem_no
+		  , pos.pos_name pos_name
+		  , m.mem_name AS m_mem_name
+		FROM
+		    work w
+		    left join pic_nm pic on w.work_no = pic.work_no 
+		    inner join member m  on pic.mem_no = m.mem_no 
+		    left join position pos on m.pos_no = pos.pos_no
+		where
+		w.work_no =  #{workNo}
+	</select>
+	<select id="checkList" parameterType="int"
+		resultMap="checkMap">
+		SELECT
+		cl_no
+		, work_no
+		, cl_name
+		, check_yn
+		FROM
+		checklist
+		where work_no = #{workNo}
+	</select>
+
+	<select id="listHome" parameterType="int" resultMap="proMap">
+
+SELECT
+    p.project_no,
+    p.mng_pic_no,
+    p.project_title,
+    to_char(p.reg_date, 'YYYY-MM-DD') AS p_reg_date,
+    to_char(p.end_date, 'YYYY-MM-DD') AS p_end_date,
+    pa.mem_no pa_mem_no,
+    m.mem_name mng_mem_name,
+    pos.pos_name mng_pos_name,
+    w.work_no,
+    to_char(w.reg_date, 'YYYY-MM-DD') AS w_reg_date,
+    to_char(w.end_date, 'YYYY-MM-DD') AS w_end_date,
+    w.work_intro,
+    w.work_title,
+	pa.mem_no
+FROM
+    project p
+LEFT JOIN work w ON p.project_no = w.project_no
+LEFT JOIN project_attendee pa ON p.project_no = pa.project_no
+left join member m on p.mng_pic_no = m.mem_no
+left join POSITION pos on m.pos_no = pos.pos_no
+left join project_attendee pa on p.project_no = pa.project_no
+
+WHERE
+   (pa.mem_no = #{memNo} OR p.mng_pic_no = #{mngPicNo})
+
+ORDER BY
+    w.work_no ASC
+
+	</select>
+
+	<select id="countWorkMem" parameterType="int" resultType="int">
+		SELECT
+		project_no,
+		COUNT(mem_no)
+		FROM
+		project_attendee
+		where project_no = #{projectNo}
+		GROUP BY
+		project_no
+	</select>
+
+	<select id="countWork" parameterType="int" resultType="int">
+		SELECT
+		count(work_no)
+		FROM
+		work
+		where project_no= #{projectNo}
+	</select>
+
+	<insert id="newComent" parameterType="WorkComentVO"
+		useGeneratedKeys="true">
+		<selectKey keyProperty="cmntNo" resultType="int"
+			order="BEFORE">
+			select seq_workcoment_no.nextval from dual
+		</selectKey>
+
+		insert into work_coment (
+		cmnt_no
+		, work_no
+		, cmnt_content
+		, reg_date
+		, writer_no
+		) values (
+		#{cmntNo}
+		, #{workNo}
+		, #{cmntContent}
+		, sysdate
+		, #{writerNo}
+		)
+
+	</insert>
+	<select id="workDetail" parameterType="int" resultType="WorkVO">
+		SELECT
+		    w.work_no,
+		    to_char(w.reg_date, 'YYYY-MM-DD') AS w_reg_date,
+		    to_char(w.end_date, 'YYYY-MM-DD') AS w_end_date,
+		    w.file_no,
+		    w.work_prograss,
+		    w.field,
+		    w.work_intro,
+		    w.work_title,
+		    wf.mem_no favorMem,
+		    wf.favoritey,
+		    
+		
+		FROM
+		    work w
+		
+		LEFT JOIN work_favorite wf ON w.work_no = wf.work_no
+		
+		WHERE
+		    w.work_no = #{workNo}
+	</select>
+
+	<delete id="delComnet" parameterType="int">
+		DELETE FROM work_coment
+		WHERE
+		cmnt_no = #{cmntNo}
+
+	</delete>
+	<delete id="delAllComnet" parameterType="int">
+		DELETE FROM work_coment
+		WHERE
+		work_no = #{workNo}
+
+	</delete>
+
+	<delete id="delAllCheck" parameterType="CheckListVO">
+		delete from checklist
+		where work_no = #{workNo}
+	</delete>
+
+	<delete id="delAllFilesDetail" parameterType="int">
+		delete from file_detail
+		where file_no = #{fileNo}
+	</delete>
+
+	<delete id="delAllFile" parameterType="int">
+		delete from files
+		where file_no = #{fileNo}
+	</delete>
+
+	<delete id="delAllPicMem" parameterType="int">
+		delete from pic_nm
+		where
+		work_no = #{workNo}
+	</delete>
+
+	<delete id="delWork" parameterType="int">
+		delete from work
+		where work_no = #{workNo}
+	</delete>
+	<delete id="delAttendee" parameterType="int">
+		delete from project_attendee
+		where project_no = #{projectNo}
+	</delete>
+
+	<delete id="delFavorite" parameterType="int">
+		delete from project_favorite where project_no = #{projectNo}
+	</delete>
+
+
+	<delete id="delProject" parameterType="int">
+		delete from project
+		where project_no = #{projectNo}
+	</delete>
+
+
+	
+	<select id="projectAttendeeList" parameterType="int" resultMap="paMemMap">
+		select
+			pa.project_no
+			, pa.mem_no pa_mem_no
+			, m.mem_name
+			, pos.pos_name
+		from  project_attendee pa
+		left join member m on(pa.mem_no = m.mem_no)
+		left join position pos on (m.pos_no = pos.pos_no)
+		where pa.project_no = #{projectNo}
+	</select>
+	
+	<update id="checkListYn" parameterType="CheckListVO">
+		UPDATE checklist
+		SET
+		    check_yn = #{checkYn}
+		    , check_date = sysdate
+		    , mem_no = #{memNo}
+		where 
+			cl_no = #{clNo}
+	
+	
+	</update>
+	
+	<delete id="delCheck" parameterType="int">
+		DELETE FROM checklist
+			WHERE
+        	work_no = #{workNo}
+	
+	</delete>
+	
+	<insert id="modCheckList" parameterType="CheckListVO">
+		INSERT INTO checklist (
+		    cl_no
+		    , work_no
+		    , cl_name
+		    , check_yn
+		) VALUES (
+		    #{clNo}
+		  , #{workNo}
+		  , #{clName}
+		  , #{checkYn}
+		)
+	
+	</insert>
+	
+	<update id="modifyWork" parameterType="WorkVO">
+		
+		UPDATE work
+		SET
+		    work_title = #{workTitle}
+		    , work_intro = #{workIntro}
+		    , end_date = #{endDate} 
+		WHERE
+	        work_no = #{workNo}
+		
+	</update>
+	<update id="modifyWorkplus" parameterType="WorkVO">
+		
+		UPDATE work
+		SET
+		    work_title = #{workTitle}
+		    , work_intro = #{workIntro}
+		    , end_date = #{endDate} 
+		    , file_no = #{fileNo}
+		WHERE
+	        work_no = #{workNo}
+		
+	</update>
+	
+	<insert id="insertWorkFileDetail" parameterType="FilesDetailVO">
+				INSERT INTO file_detail (
+		file_detail_no,
+		file_no,
+		file_path,
+		file_size,
+		file_mime,
+		file_originalname,
+		file_uploadname,
+		reg_date,
+		mem_no
+		) VALUES (
+		#{fileDetailNo},
+		#{fileNo},
+		#{filePath},
+		#{fileSize},
+		#{fileMime},
+		#{fileOriginalname},
+		#{fileUploadname},
+		#{regDate},
+		#{memNo}
+		)
+	</insert>
+	
+	<!-- 즐겨찾기 -->
+	<select id="favorList" parameterType="int" resultMap="favorMap">
+		SELECT
+		    w.work_no
+		  , w.project_no
+		  , w.writer_no
+		  , to_char(w.reg_date,'YYYY-MM-DD') w_reg_date
+		  , to_char(w.end_date,'YYYY-MM-DD') w_end_date
+		  , w.file_no
+		  , w.work_prograss
+		  , w.field
+		  , w.work_intro
+		  , w.work_title
+		  , wf.favoritey 
+		  , wf.mem_no
+		FROM
+		    work w, work_favorite wf        
+		where 
+		wf.work_no = w.work_no
+		and wf.mem_no = #{memNo}
+		and wf.favoritey = 'Y'
+	</select>
+	
+	<!-- work디테일 모달창 -->
+	<select id="modalOpen" parameterType="int" resultMap="workMap">
+		select 
+		   w.work_no
+		  , w.project_no
+		  , w.writer_no
+		  , to_char(w.reg_date,'YYYY-MM-DD') w_reg_date
+		  , to_char(w.end_date,'YYYY-MM-DD') w_end_date
+		  , w.file_no
+		  , w.work_prograss
+		  , w.field
+		  , w.work_intro
+		  , w.work_title
+		  ,wf.favoritey
+		  ,wf.mem_no favor_mem_no
+		  , fd.file_detail_no
+		  , fd.file_size
+		  , fd.file_originalname
+		  , fd.file_path
+		from
+		work w
+		left join file_detail fd on w.file_no = fd.file_no
+		left join work_favorite wf on w.work_no = wf.work_no
+		where
+		w.work_no = #{workNo}
+		
+	</select>
+	<!-- 프로젝트 작성자 확인 -->
+	<select id="mngPicChek" parameterType="int" resultType="ProjectVO">
+		select MNG_PIC_NO
+		from project
+		where project_no = #{projectNo}
+	
+	</select>
+	<!-- work 댓글 확인 -->
+	<select id="cmtList" parameterType="int" resultType="WorkComentVO">
+		 select  
+		    cm.work_no
+		  , cm.cmnt_no
+		  , cm.cmnt_content
+		  , cm.reg_date
+		  , cm.writer_no
+		  , m.mem_name
+		  , pos.pos_name
+		  from 
+		work_coment cm
+		left join member m on cm.writer_no = m.mem_no
+		left join position pos on m.pos_no = pos.pos_no
+		
+		  where cm.work_no = #{workNo}
+	</select>
+	
+	
+	
+	
+	
+	<select id="countCheck" parameterType="int" resultType="int">
+		SELECT
+		  COUNT(cl_no)
+		FROM
+		    checklist
+		 where work_no = #{workNo}
+	</select>
+	<select id="countCheckY" parameterType="int" resultType="int">
+	SELECT
+	  COUNT(CASE WHEN check_yn = 'Y' THEN 1 END)
+	FROM
+	    checklist
+	 where work_no = #{workNo}
+	</select>
+	
+	<update id="updateField" parameterType="WorkVO" >
+		UPDATE work
+		SET
+		    field = #{field}
+		WHERE
+        	work_no = #{workNo}
+	</update>
+	
+	<update id="workStatus" parameterType="WorkVO">
+		
+		UPDATE work
+		SET
+			work_prograss = #{workPrograss}
+		WHERE
+	        work_no = #{workNo}
+		
+	</update>
+	
+<!-- 프로젝트별 워크 번호 -->
+ 	<select id="ListWork" parameterType="int" resultType="workVO">
+ 		select work_no from work where project_no = #{projectNo}
+ 	</select>
+	
+	<select id="loginMem" parameterType="int" resultType="MemberVO">
+		select
+			m.mem_no
+			,m.mem_name
+			,pos.pos_name
+		from member m
+		left join POSITION pos on m.pos_no = pos.pos_no
+		where m.mem_no = #{memNo}
+	</select>
+	
+	<delete id="delFavor" parameterType="int">
+		delete from WORK_FAVORITE 
+		where work_no = #{workNo}
+		and mem_no = #{memNo}
+	</delete>
+	
+	<select id="siderList" parameterType="int" resultMap="siderMap">
+		select 
+			p.project_no
+			, p.project_title
+			, p.mng_pic_no
+			, w.work_no
+			, w.work_title
+			, w.writer_no
+		 	, pa.mem_no pa_mem_no
+		 	, pic.mem_no pic_mem_no
+		 	, wf.favoritey
+		 	, wf.mem_no favor_mem_no
+    	from 
+    		project p
+    		left join work w on p.project_no = w.project_no
+    		left join project_attendee pa on p.project_no = pa.project_no
+    		left join pic_NM pic on w.work_no = pic.work_no
+    		left join member m on pa.mem_no = m.mem_no
+    		left join work_favorite wf on w.work_no = wf.work_no
+    	where
+    		p.mng_pic_no = #{memNo}
+    		or pa.mem_no = #{memNo}
+    		or pic.mem_no = #{memNo}
+    		or w.writer_no = #{memNo}
+    		or wf.mem_no = #{memNo}
+	
+	</select>
+	
+	<select id="countVal1" parameterType="int" resultType="ChartVO">
+	  select 
+		count(case when work_prograss = 'wait' then 1 end) chartWorkWite
+		,count(case when work_prograss = 'ing' then 1 end) ingWork
+		,count(case when work_prograss = 'end' then 1 end) endWork
+	from work 
+	where project_no = #{projectNo}
+	</select>
+	
+	<select id="countVal2" parameterType="int" resultType="ChartVO">
+    	select 
+		    count(case when field &lt; 100 and field &lt; 100then 1 end) unfinishedWork
+		    ,count(case when field >= 100 and work_prograss = 'end' then 1 end) finishedWork
+		from work
+		where project_No = #{projectNo}
+		and work_prograss = 'end'
+	</select>
+	<select id="countVal3" parameterType="int" resultType="ChartVO">
+    	select 
+		    count(mem_no) countMem
+		from project_attendee 
+		where project_No = #{projectNo}
+	</select>
+	<select id="countVal4" parameterType="int" resultType="ChartVO">
+    	select 
+		    count(case when cl.check_yn != 'Y' then 1 end) NcheckCount
+		from work w
+		join checkList cl on w.work_no = cl.work_no
+		where w.project_No = #{projectNo}
+	</select>
+	
+	<select id="picChart" parameterType="int" resultType="ChartVO">
+		select 
+			m.mem_name memName,
+			pos.pos_Name posName,
+		    count(distinct case when w.end_date > sysdate then w.work_no end) memNowWork,
+		    count(distinct case when w.end_date &lt; sysdate and w.field &lt; 100 then w.work_no end) unfinishedWork,
+		    count(distinct case when w.field >= 100 and work_prograss = 'end' then w.work_no end) finishedWork,
+		    count(case when cl.mem_no = #{memNo} and cl.check_yn = 'Y' then 1 end) checkCount,
+		    count(case when cl.check_yn != 'Y' then 1 end) NcheckCount
+		from project p
+			join work w on p.project_no = w.project_no
+			join pic_nm pic on w.work_no = pic.work_no
+			join checkList cl on w.work_no = cl.work_no
+			join member m on pic.mem_no = m.mem_no
+			join position pos on m.pos_no = pos.pos_no
+		where 
+			p.project_no = #{projectNo}
+			and pic.mem_no = #{memNo}
+		 group by m.mem_name, pos.pos_Name
+	</select>
+	<select id="countStatus" parameterType="int" resultType="WorkVO">
+  select 
+		count(case when work_prograss = 'wait' then 1 end) workWite
+		,count(case when work_prograss = 'ing' then 1 end) workIng
+		,count(case when work_prograss = 'end' then 1 end) workEnd
+	from work 
+	where project_no = #{projectNo}
+	</select>
+	
+	<update id="updatePrograss" parameterType="WorkVO">
+		update work
+		set
+			work_prograss = #{workPrograss}		
+		where work_no = #{workNo}
+	</update>
+	<update id="dueEnd" parameterType="WorkVO">
+		update work
+		set
+			work_prograss = #{workPrograss}		
+		where work_no = #{workNo}
+	</update>
+	
+	<select id="projectField" parameterType="int" resultType="WorkVO">
+		select work_no , field from work
+		where project_no = #{projectNo}
+	</select>
+	
+</mapper>

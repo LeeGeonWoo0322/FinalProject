@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:mybatis-spring="http://mybatis.org/schema/mybatis-spring"
+	xsi:schemaLocation="http://mybatis.org/schema/mybatis-spring http://mybatis.org/schema/mybatis-spring-1.2.xsd
+		http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.3.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.3.xsd">
+	
+	<context:component-scan base-package="kr.or.ddit">
+		<context:include-filter type="annotation" expression="org.springframework.stereotype.Service"/>
+		<context:include-filter type="annotation" expression="org.springframework.stereotype.Repository"/>
+		<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+	</context:component-scan>
+	
+	<!-- Root Context: defines shared resources visible to all other web components -->
+		
+	<bean id="hikariConfig" class="com.zaxxer.hikari.HikariConfig">
+	    <property name="driverClassName" value="oracle.jdbc.OracleDriver" />
+	    <property name="jdbcUrl" value="jdbc:oracle:thin:@112.220.114.130:1521:XE" />
+	    <property name="username" value="team3_202404F" />
+	    <property name="password" value="java" />
+	    <property name="maximumPoolSize" value="3"></property>
+	</bean>
+	
+	<bean id="dataSource" class="com.zaxxer.hikari.HikariDataSource" destroy-method="close">
+	    <constructor-arg ref="hikariConfig" />
+	</bean>  
+	
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource"/>
+		<property name="mapperLocations" value="classpath:/sqlmap/**/*_SQL.xml"/>
+		<property name="configLocation" value="classpath:/sqlmap/mybatisAlias.xml"/>
+	</bean>
+	
+	<bean id="sqlSessionTemplate" class="org.mybatis.spring.SqlSessionTemplate">
+		<constructor-arg name="sqlSessionFactory" index="0" ref="sqlSessionFactory"/>
+	</bean>
+	
+	
+	<!-- 
+		Service가 요청하는 요청을 기존에는 DAOImpl이 받아서 처리했다면, 지금부터는 Mapper 인터페이스가 받아 처리할 수 있도록
+		MapperScannerConfigurer을 통해 mapper의 위치를 받아 Mapper한테 요청하면 Mapper는 DAO의 역할을 담당하고 있으므로
+		받은 요청과 연결되어 있는 쿼리를 대신 실행시켜준다.
+		이때, Mapper 인터페이스의 쿼리파이드 경로가 (인터페이스의 위치)가 namespace가 되고, 인터페이스의 메소드(기능)명이
+		쿼리의 id가 된다. 그렇기 때문에 인터페이스의 메소드를 호출하는건 곧 query xml 파일 내 namespace.id를 호출하는 것과 같다.
+		
+		Mapper 인터페이스 설정
+		개발자가 직접 DAO를 설정하지 않아도 자동으로 Mapper 인터페이스를 활용하는 객체를 생성하게 된다.
+	 -->
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="basePackage" value="kr.or.ddit.**.mapper"/>	
+	</bean>
+	
+	<!-- MultipartFile CommonsMultipartResolver 설정 시 -->
+	<bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+		<!-- 하나의 요청당 파일 업로드 용량 -->
+		<property name="maxUploadSize" value="4135728"></property>
+		<!-- 메모리에 저장되는 최대 용량 -->
+		<property name="maxInMemorySize" value="3145728"></property>
+		<property name="defaultEncoding" value="UTF-8"></property>
+	</bean>
+	
+	<bean id="uploadPath" class="java.lang.String">
+		<constructor-arg value="C:\00.JSP_SPRING\02,SPRING2\workspace_spring2\.metadata\.plugins\org.eclipse.wst.server.core\tmp0\wtpwebapps\FinalProject2/resources/upload"></constructor-arg>
+	</bean>
+	<bean id="localPath" class="java.lang.String">
+		<constructor-arg value="C:\00.JSP_SPRING\02,SPRING2\workspace_spring2\FinalProjectFile"/>
+	</bean>
+	
+	<!-- 스프링 AOP 활성화 -->
+	<aop:aspectj-autoproxy/>
+	
+<!-- 	<context:component-scan base-package="kr.or.ddit"> -->
+<!-- 		<context:include-filter type="annotation" expression="org.springframework.stereotype.Service"/> -->
+<!-- 		<context:include-filter type="annotation" expression="org.springframework.stereotype.Repository"/> -->
+<!-- 		<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/> -->
+<!-- 	</context:component-scan> -->
+	
+	<!-- 트랜잭션 관리자의 빈 정의 -->
+	<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource"></property>
+	</bean>
+	<tx:advice id="txAdvice" transaction-manager="transactionManager">
+	   <tx:attributes>	 
+	       <tx:method name="*" propagation="REQUIRED" rollback-for="Exception"/>
+	   </tx:attributes>
+	</tx:advice>
+    
+	<aop:config>
+		<aop:pointcut id="requiredTx" expression="execution(* egovframework.com..*Impl.*(..)) or
+												  execution(* org.egovframe.rte.fdl.excel.impl.*Impl.*(..))"/>
+		<aop:advisor advice-ref="txAdvice" pointcut-ref="requiredTx" />
+	</aop:config>
+	
+	<!-- 어노테이션 기반의 트랜잭션 제어를 활성화합니다. -->
+	<tx:annotation-driven/>
+	
+	<bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
+	    <property name="host" value="smtp.naver.com"/>
+	    <property name="port" value="587"/>
+	    <property name="username" value="ha1eyk513@naver.com"/>
+	    <property name="password" value="dkssud502@"/>
+	    <property name="javaMailProperties">
+	        <props>
+	            <prop key="mail.smtp.auth">true</prop>
+	            <prop key="mail.smtp.starttls.enable">true</prop>
+	            <prop key="mail.smtp.ssl.trust">smtp.naver.com</prop>
+	            <prop key="mail.smtp.ssl.protocols">TLSv1.2</prop>
+	            <prop key="mail.debug">true</prop>
+	        </props>
+	    </property>
+	</bean>
+
+	<!-- 송수신 로그 요약  -->
+	<bean id="trsmrcvLogging" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
+		<property name="targetObject" ref="iMailService" />
+		<property name="targetMethod" value="sendReservationMail" />
+		<property name="concurrent" value="false" />
+	</bean>
+
+	<!-- 송수신 로그 요약  트리거-->
+	<bean id="trsmrcvLogTrigger" class="org.springframework.scheduling.quartz.SimpleTriggerFactoryBean">
+		<property name="jobDetail" ref="trsmrcvLogging" />
+		<property name="startDelay" value="1000" />
+		<property name="repeatInterval" value="60000" />
+	</bean>
+
+	<!-- 송수신 로그 스케줄러 -->
+	<bean id="trsmrcvScheduler" class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
+		<property name="triggers">
+			<list>
+				<ref bean="trsmrcvLogTrigger" />
+			</list>
+		</property>
+	</bean>
+
+		
+</beans>

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+	<mapper namespace="kr.or.ddit.admin.mail.mapper.IAdminMailMapper">
+		
+		<select id="getDeptList" resultType="DepartmentVO">
+			select
+				dept_no
+				, dept_name
+			from
+				department
+			order by dept_no
+		</select>
+		
+		<select id="getTotalMailUsageCnt" parameterType="DataListVO" resultType="int">
+			<![CDATA[
+				select
+				    count(*)
+				from 
+				    mail
+				where
+					1=1
+				    and mail_date >= TO_TIMESTAMP(#{periodData1}, 'YYYY-MM-DD HH24:MI:SS')
+				    and mail_date < TO_TIMESTAMP(#{periodData2}, 'YYYY-MM-DD HH24:MI:SS')
+			]]>
+		</select>
+		
+		<select id="getDeptMailUsageCnt" parameterType="DataListVO" resultType="int">
+			<![CDATA[
+				select
+				    count(*)
+				from 
+				    mail m, member me, department d
+				where
+					1=1
+				    and mail_date >= TO_TIMESTAMP(#{periodData1}, 'YYYY-MM-DD HH24:MI:SS')
+				    and mail_date < TO_TIMESTAMP(#{periodData2}, 'YYYY-MM-DD HH24:MI:SS')
+				    and d.dept_no = #{dataType}
+				    and m.mem_no = me.mem_no and me.dept_no = d.dept_no
+			]]>
+		</select>
+		
+		<select id="getTotalSpamMailCnt" parameterType="DataListVO" resultType="int">
+			<![CDATA[
+				select
+				    count(*)
+				from 
+				    mail m, mail_recipient mr
+				where
+					1=1
+				    and mail_date >= TO_TIMESTAMP(#{periodData1}, 'YYYY-MM-DD HH24:MI:SS')
+				    and mail_date < TO_TIMESTAMP(#{periodData2}, 'YYYY-MM-DD HH24:MI:SS')
+				    and mr.rec_status = '스팸'
+				    and m.mail_no = mr.mail_no
+			]]>
+		</select>
+		
+		<select id="getDeptSpamMailCnt" parameterType="DataListVO" resultType="int">
+			<![CDATA[
+				select
+				    count(*)
+				from 
+				    mail m, mail_recipient mr, member me, department d
+				where
+					1=1
+				    and mail_date >= TO_TIMESTAMP(#{periodData1}, 'YYYY-MM-DD HH24:MI:SS')
+				    and mail_date < TO_TIMESTAMP(#{periodData2}, 'YYYY-MM-DD HH24:MI:SS')
+				    and d.dept_no = #{dataType} and mr.rec_status = '스팸'
+				    and m.mail_no = mr.mail_no and mr.recipient_no = me.mem_no and me.dept_no = d.dept_no
+			]]>
+		</select>
+		
+	</mapper>

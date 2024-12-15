@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.common.reservation.mapper.IReservationMapper">
+
+    <select id="getAssetCategoryList" resultType="AssetCategoryVO">
+		SELECT
+		    ac_no
+		  , ac_name
+		  , ac_rep_yn
+		  , ac_use_start
+		  , ac_use_end
+		  , ac_use_week
+		  , ac_use_auth
+		  , mem_no
+		  , ac_use_stop
+		  , ac_del_yn
+		  , ac_use_info
+		  , ac_asset_cnt
+		FROM
+		    asset_category
+		ORDER BY
+			ac_no asc
+    </select>
+    
+    <select id="getAssetList" parameterType="AssetCategoryVO" resultType="AssetVO">
+    	SELECT
+		    ast_no
+		  , ast_name
+		  , rep_yn
+		  , ast_use_stop
+		  , ac_no
+		FROM
+		    asset
+		WHERE
+			ac_no = #{acNo}
+		ORDER BY
+			ast_no asc
+    </select>
+    
+    <select id="getAssetCategory" parameterType="AssetCategoryVO" resultType="AssetCategoryVO">
+		SELECT
+		    ac_no
+		  , ac_name
+		  , ac_rep_yn
+		  , ac_use_start
+		  , ac_use_end
+		  , ac_use_week
+		  , ac_use_auth
+		  , mem_no
+		  , ac_use_stop
+		  , ac_del_yn
+		  , ac_use_info
+		  , ac_asset_cnt
+		FROM
+		    asset_category
+		WHERE
+			ac_no = #{acNo}
+    </select>
+    
+    <insert id="insertReservation" parameterType="ReservationVO">
+		INSERT INTO reservation (
+		    resv_no
+		    , ast_no
+		    , resv_member
+		    , start_date
+		    , end_date
+		    , allday_yn
+		    , resv_prps
+		) VALUES (
+		    seq_reservation.nextval
+		  , #{astNo}
+		  , #{resvMember}
+		  , TO_TIMESTAMP(#{startDate}, 'YYYY-MM-DD HH24:MI:SS')
+		  , TO_TIMESTAMP(#{endDate}, 'YYYY-MM-DD HH24:MI:SS')
+		  , #{alldayYn}
+		  , #{resvPrps}
+		)
+    </insert>
+    
+    <select id="getReservationList" resultType="ReservationVO">
+    	SELECT
+		    r.resv_no
+		  , r.ast_no
+		  , r.resv_member
+		  , m.mem_name
+		  , r.start_date
+		  , r.end_date
+		  , r.allday_yn
+		  , r.resv_prps
+		FROM
+		    reservation r, member m
+		WHERE
+			r.resv_member = m.mem_no
+    </select>
+    
+    <select id="getAssetReservationList" parameterType="AssetVO" resultType="ReservationVO">
+    	SELECT
+		    r.resv_no
+		  , r.ast_no
+		  , r.resv_member
+		  , m.mem_name
+		  , r.start_date
+		  , r.end_date
+		  , r.allday_yn
+		  , r.resv_prps
+		FROM
+		    reservation r, member m
+		WHERE
+			r.resv_member = m.mem_no and ast_no = #{astNo}
+    </select>
+    
+	<select id="getReservation" parameterType="int" resultType="ReservationVO">
+		SELECT
+		    r.resv_no
+		  , r.ast_no
+		  , r.resv_member
+		  , m.mem_name
+		  , p.pos_name
+		  , d.dept_name
+		  , r.start_date
+		  , r.end_date
+		  , r.allday_yn
+		  , r.resv_prps
+		FROM
+		    reservation r, member m, position p, department d
+		WHERE
+			resv_no = #{resvNo}
+			and r.resv_member = m.mem_no and m.pos_no = p.pos_no and d.dept_no = m.dept_no
+	</select>
+	
+	<select id="getAssetByReservation" parameterType="ReservationVO" resultType="AssetVO">
+		SELECT
+		    ast_no
+		  , ast_name
+		  , rep_yn
+		  , ast_use_stop
+		  , ac_no
+		FROM
+		    asset
+		WHERE
+			ast_no = #{astNo}
+	</select>
+	
+	<select id="getAssetByAstNo" parameterType="int" resultType="AssetVO">
+		SELECT
+		    ast_no
+		  , ast_name
+		  , rep_yn
+		  , ast_use_stop
+		  , ac_no
+		FROM
+		    asset
+		WHERE
+			ast_no = #{astNo}
+	</select>
+	
+	<select id="getAssetCategoryByAsset" parameterType="AssetVO" resultType="AssetCategoryVO">
+		SELECT
+		    ac_no
+		  , ac_name
+		  , ac_rep_yn
+		  , ac_use_start
+		  , ac_use_end
+		  , ac_use_week
+		  , ac_use_auth
+		  , mem_no
+		  , ac_use_stop
+		  , ac_del_yn
+		  , ac_use_info
+		  , ac_asset_cnt
+		FROM
+		    asset_category ac
+		WHERE
+			ac_no = #{acNo}
+	</select>
+	
+	<select id="getAttendeeList" parameterType="ReservationVO" resultType="ReservationAttendeeVO">
+		SELECT
+		    ra.ra_no
+		  , ra.resv_no
+		  , m.mem_no
+		  , m.mem_name
+		  , p.pos_name
+		  , d.dept_name
+		FROM
+		    reservation_attendee ra, member m, position p, department d
+		WHERE
+			ra.mem_no = m.mem_no and m.pos_no = p.pos_no and d.dept_no = m.dept_no
+			and ra.resv_no = #{resvNo}
+	</select>
+	
+	<update id="updateReservation" parameterType="ReservationVO">
+		update
+			reservation
+		set
+			start_date = TO_TIMESTAMP(#{startDate}, 'YYYY-MM-DD HH24:MI:SS')
+			, end_date = TO_TIMESTAMP(#{endDate}, 'YYYY-MM-DD HH24:MI:SS')
+			, allday_yn = #{alldayYn}
+			, resv_prps = #{resvPrps}
+		where
+			resv_no = #{resvNo}
+	</update>
+	
+	<update id="updateReservationByDrop" parameterType="ReservationVO">
+		update
+			reservation
+		set
+			ast_no = #{astNo}
+			,start_date = TO_TIMESTAMP(#{startDate}, 'YYYY-MM-DD HH24:MI:SS')
+			, end_date = TO_TIMESTAMP(#{endDate}, 'YYYY-MM-DD HH24:MI:SS')
+		where
+			resv_no = #{resvNo}
+	</update>
+	
+	<delete id="cancleReservation" parameterType="ReservationVO">
+		delete from reservation
+		where
+			resv_no = #{resvNo}
+	</delete>
+	
+	<select id="getMyReservation" parameterType="MemberVO" resultType="ReservationVO">
+		<![CDATA[
+			SELECT
+			    r.resv_no
+			  , r.ast_no
+			  , r.resv_member
+			  , r.start_date
+			  , r.end_date
+			  , r.allday_yn
+			  , r.resv_prps
+			  , ac.ac_name
+			  , a.ast_name
+			FROM
+			    reservation r, asset_category ac, asset a
+			WHERE
+				r.ast_no = a.ast_no and a.ac_no = ac.ac_no
+				and r.resv_member = #{memNo} and r.end_date >= sysdate
+		]]>
+	</select>
+
+</mapper>

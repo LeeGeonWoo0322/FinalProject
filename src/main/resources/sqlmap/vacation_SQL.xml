@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  <mapper namespace="kr.or.ddit.common.attend.mapper.IVacationMapper">
+  
+  	<select id="vacaAllList" parameterType="UseVacationVO" resultType="UseVacationVO">
+  		select 
+		    uv.*, sv.VCT_NAME
+		from 
+		    SUBVACATION_TYPE sv, (
+		        select 
+		            *
+		        from
+		            use_vacation uv
+		        where
+		            mem_no = #{memNo}
+		            and to_char(vct_start, 'yyyy-mm') like '%'||#{vctStart}||'%'
+		    )uv
+		where 
+		    1=1
+		    and sv.vct_type_no = uv.vct_type_no
+		order by uv.use_vct_no
+  	</select>
+  	
+  	<select id="createVacaList" parameterType="VacCreateVO" resultType="VacCreateVO">
+  		select 
+		    *
+		from SUBVACATION_TYPE sv, (
+		    select
+		        *
+		    from
+		        vac_create
+		    where
+		        1=1
+		        and mem_no = #{memNo}
+		        and to_char(vac_create_date, 'yyyy-mm') like '%'||#{vacCreateDate}||'%'
+		    ) vc
+		where 
+		    1=1
+		    and sv.VCT_TYPE_NO = vc.vct_type_no
+		order by vc.vac_create_no desc
+  	</select>
+  	
+  	<select id="myVacaTotal" parameterType="UseVacationVO" resultType="UseVacationVO">
+  		select 
+  			use_vct_no, vct_type_no, mem_no, use_dt, vct_cont, vct_start, vct_end
+  		from
+  			use_vacation
+  		where
+  			1=1
+  			and mem_no = #{memNo}
+  			and to_char(vct_start, 'yyyy/mm') like '%'||#{vctStart}||'%'
+  		order by use_vct_no desc
+  	</select>
+  	
+  	<select id="myCreateVacaTotal" parameterType="VacCreateVO" resultType="VacCreateVO">
+  		select
+  			vac_create_no, vac_create_date, vac_create_count, vct_type_no, mem_no
+  		from
+  			vac_create
+  		where
+  			1=1
+  			and mem_no = #{memNo}
+  			and to_char(vac_create_date, 'yyyy/mm') like '%'||#{vacCreateDate}||'%'
+  	</select>
+  	
+  	<select id="deptVaca" parameterType="AttendanceVO" resultType="int">
+  		select
+		    count(*)
+		from
+		    member m, department d, use_vacation v
+		where
+		    1 = 1
+		    and m.dept_no = #{deptNo}
+		    and to_char(v.vct_start, 'YYYY/MM') like '%'||#{attendanceDate}||'%'
+		    and m.dept_no = d.dept_no
+		    and m.mem_no = v.mem_no
+  	</select>
+  	
+  </mapper>

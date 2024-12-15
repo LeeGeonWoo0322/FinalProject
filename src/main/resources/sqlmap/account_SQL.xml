@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  <mapper namespace="kr.or.ddit.common.account.mapper.IAccountMapper">
+  
+  	<resultMap type="MemberVO" id="MemberMap">
+  		<id property="memNo" column="mem_no"/>
+		<result property="memNo" column="mem_no" />
+		<result property="posNo" column="pos_no" />
+		<result property="deptNo" column="dept_no" />
+		<result property="wtNo" column="wt_no" />
+		<result property="memId" column="mem_id" />
+		<result property="memPw" column="mem_pw" />
+		<result property="memName" column="mem_name" />
+		<result property="memTel" column="mem_tel" />
+		<result property="memEmail" column="mem_email" />
+		<result property="memAddr1" column="mem_addr1" />
+		<result property="memAddr2" column="mem_addr2" />
+		<result property="memPost" column="mem_post" />
+		<result property="hireDate" column="hire_date" />
+		<result property="memStatus" column="mem_status" />
+		<result property="driverLicense" column="driver_license" />
+		<result property="memProfileimg" column="mem_profileimg" />
+		<result property="tempPwYn" column="temp_pw_yn" />
+		<result property="enabled" column="enabled" />
+		<result property="workVaca" column="work_vaca" />
+		<result property="driveVolume" column="drive_volume" />
+		<result property="memCardImage" column="mem_card_image" />
+		<result property="memCardMemo" column="mem_card_memo" />
+		<result property="mailVolume" column="mail_volume" />
+		<result property="deptName" column="dept_name" />
+		<result property="posName" column="pos_name" />
+		<result property="secNo" column="sec_no" />
+		<collection property="memAuth" resultMap="memberAuthMap"/>
+  	</resultMap>
+  	
+  	<resultMap type="MemberAuthVO" id="memberAuthMap">
+  		<result property="memNo" column="mem_no"/>
+  		<result property="memAuth" column="mem_auth"/>
+  	</resultMap>
+  	
+  	<select id="loginCheck" parameterType="MemberVO" resultType="MemberVO">
+  		select
+		    mem_no
+		  , pos_no
+		  , dept_no
+		  , wt_no
+		  , mem_id
+		  , mem_pw
+		  , mem_name
+		  , mem_tel
+		  , mem_email
+		  , mem_addr1
+		  , mem_addr2
+		  , mem_post
+		  , hire_date
+		  , mem_status
+		  , driver_license
+		  , mem_profileimg
+		  , temp_pw_yn
+		  , enabled
+		  , work_vaca
+		  , drive_volume
+		  , mem_card_image
+		  , mem_card_memo
+  		from member
+  		where mem_id = #{memId}
+  	</select>
+  	
+  	<select id="tempPassCheck" parameterType="String" resultType="MemberVO">
+  	  	select
+		    mem_no
+		  , pos_no
+		  , dept_no
+		  , wt_no
+		  , mem_id
+		  , mem_pw
+		  , mem_name
+		  , mem_tel
+		  , mem_email
+		  , mem_addr1
+		  , mem_addr2
+		  , mem_post
+		  , hire_date
+		  , mem_status
+		  , driver_license
+		  , mem_profileimg
+		  , temp_pw_yn
+		  , enabled
+		  , work_vaca
+		  , drive_volume
+		  , mem_card_image
+		  , mem_card_memo
+  		from member
+  		where mem_id = #{memId}
+  	</select>
+  	
+  	<select id="findId" parameterType="MemberVO" resultType="MemberVO">
+  		select 
+		    mem_no
+		  , pos_no
+		  , dept_no
+		  , wt_no
+		  , mem_id
+		  , mem_pw
+		  , mem_name
+		  , mem_tel
+		  , mem_email
+		  , mem_addr1
+		  , mem_addr2
+		  , mem_post
+		  , hire_date
+		  , mem_status
+		  , driver_license
+		  , mem_profileimg
+		  , temp_pw_yn
+		  , enabled
+		  , work_vaca
+		  , drive_volume
+		  , mem_card_image
+		  , mem_card_memo
+  		from member
+  		where mem_email = #{memEmail}
+  	</select>
+  	
+  	<select id="getMember" parameterType="String" resultMap="MemberMap">
+		SELECT
+		    m.mem_no
+		  , m.pos_no
+		  , m.dept_no
+		  , m.wt_no
+		  , m.mem_id
+		  , m.mem_pw
+		  , m.mem_name
+		  , m.mem_tel
+		  , m.mem_email
+		  , m.mem_addr1
+		  , m.mem_addr2
+		  , m.mem_post
+		  , m.hire_date
+		  , m.mem_status
+		  , m.driver_license
+		  , m.mem_profileimg
+		  , m.temp_pw_yn
+		  , m.enabled
+		  , m.work_vaca
+		  , m.drive_volume
+		  , m.mem_card_image
+		  , m.mem_card_memo
+		  , m.mail_volume
+		  , d.dept_name
+		  , p.pos_name
+		  , p.sec_no
+		  , ma.mem_auth
+		FROM
+			member m, department d, position p, member_auth ma
+		WHERE
+		    m.dept_no = d.dept_no and m.pos_no = p.pos_no and m.mem_no = ma.mem_no and mem_id = #{memId}
+  	</select>
+  	
+  	<select id="getMemberByNo" parameterType="int" resultMap="MemberMap">
+		SELECT
+		    m.mem_no
+		  , m.pos_no
+		  , m.dept_no
+		  , m.wt_no
+		  , m.mem_id
+		  , m.mem_pw
+		  , m.mem_name
+		  , m.mem_tel
+		  , m.mem_email
+		  , m.mem_addr1
+		  , m.mem_addr2
+		  , m.mem_post
+		  , m.hire_date
+		  , m.mem_status
+		  , m.driver_license
+		  , m.mem_profileimg
+		  , m.temp_pw_yn
+		  , m.enabled
+		  , m.work_vaca
+		  , m.drive_volume
+		  , m.mem_card_image
+		  , m.mem_card_memo
+		  , m.mail_volume
+		  , d.dept_name
+		  , p.pos_name
+		  , p.sec_no
+		  , ma.mem_auth
+		FROM
+		    member m, department d, position p, member_auth ma
+		WHERE
+		    m.dept_no = d.dept_no and m.pos_no = p.pos_no and m.mem_no = ma.mem_no and m.mem_no = #{memNo}
+  	</select>
+  	
+  	<select id="readByUserId" parameterType="string" resultMap="MemberMap">
+  		select
+		    m.mem_no
+		  , m.pos_no
+		  , m.dept_no
+		  , m.wt_no
+		  , m.mem_id
+		  , m.mem_pw
+		  , m.mem_name
+		  , m.mem_tel
+		  , m.mem_email
+		  , m.mem_addr1
+		  , m.mem_addr2
+		  , m.mem_post
+		  , m.hire_date
+		  , m.mem_status
+		  , m.driver_license
+		  , m.mem_profileimg
+		  , m.temp_pw_yn
+		  , m.enabled
+		  , m.work_vaca
+		  , m.drive_volume
+		  , m.mem_card_image
+		  , m.mem_card_memo
+		  , ma.mem_auth
+  		from member m, member_auth ma
+  		where mem_id = #{memId} and m.mem_no = ma.mem_no
+  	</select>
+  	
+  	<update id="tempPass" parameterType="MemberVO">
+  		update 
+  			member
+  		set
+  			mem_pw = #{memPw}, temp_pw_yn = #{tempPwYn}
+  		where
+  			mem_Id = #{memId}	
+  	</update>
+  	
+  	<update id="changePw" parameterType="MemberVO">
+  		update 
+  			member
+  		set
+  			mem_pw = #{memPw}, temp_pw_yn = #{tempPwYn}
+  		where
+  			mem_Id = #{memId}	
+  	</update>
+  	
+  	<select id="checkMemberAuth" parameterType="MemberVO" resultType="MemberAuthVO">
+  		select
+  			mem_auth
+  		from
+  			member_auth
+  		where
+  			mem_no = #{memNo}
+  	</select>
+  
+  	<select id="getSecretKey" parameterType="MemberVO" resultType="MemberAuthVO">
+  		select
+  			ma_no
+  			, mem_no
+  			, mem_auth
+  			, secretkey
+  		from
+  			member_auth
+  		where
+  			mem_no = #{memNo} and mem_auth = 'ROLE_ADMIN'
+  	</select>
+  	
+  	<insert id="insertUserLoginLog" parameterType="LogVO">
+  		insert into log(
+  			log_no
+  			, ip
+  			, mem_no
+  			, create_date
+  			, log_status
+  			, log_type
+  			, log_browser
+  			, log_os	
+  		) values (
+  			seq_log.nextval
+  			, #{ip}
+  			, #{memNo}
+  			, sysdate
+  			, #{logStatus}
+  			, #{logType}
+  			, #{logBrowser}
+  			, #{logOs}
+  		)
+  	</insert>
+  	
+  	<update id="updateMailVolume" parameterType="UpgradeReqVO">
+  		update
+  			member
+  		set
+  			mail_volume = mail_volume + (100 * 1024 * 1024)
+  		where
+  			mem_no = #{reqMemNo}
+  	</update>
+  	
+  	<update id="updateDriveVolume" parameterType="UpgradeReqVO">
+  		update
+  			member
+  		set
+  			drive_volume = drive_volume + (100 * 1024 * 1024)
+  		where
+  			mem_no = #{reqMemNo}
+  	</update>
+  	
+  </mapper>	

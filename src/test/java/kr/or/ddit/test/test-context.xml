@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:mybatis-spring="http://mybatis.org/schema/mybatis-spring"
+	xsi:schemaLocation="http://mybatis.org/schema/mybatis-spring http://mybatis.org/schema/mybatis-spring-1.2.xsd
+		http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.3.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-4.3.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.3.xsd">
+	
+	<context:component-scan base-package="kr.or.ddit">
+		<context:include-filter type="annotation" expression="org.springframework.stereotype.Repository"/>
+		<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Service"/>
+		<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/>
+	</context:component-scan>
+	
+	<!-- Root Context: defines shared resources visible to all other web components -->
+		
+	<bean id="dataSource" class="org.apache.commons.dbcp2.BasicDataSource" destroy-method="close">
+		<!-- <property name="driverClassName" value="oracle.jdbc.driver.OracleDriver" /> -->
+		<!-- <property name="url" value="jdbc:oracle:thin:@localhost:1521:xe"/> -->
+		<property name="driverClassName" value="net.sf.log4jdbc.sql.jdbcapi.DriverSpy" />
+		<property name="url" value="jdbc:log4jdbc:oracle:thin:@112.220.114.130:1521:xe"/>
+		<property name="username" value="team3_202404F"/>
+		<property name="password" value="java"/> 
+	</bean>
+	
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource"/>
+		<property name="mapperLocations" value="classpath:/sqlmap/**/*_SQL.xml"/>
+		<property name="configLocation" value="classpath:/sqlmap/mybatisAlias.xml"/>
+	</bean>
+	
+	<bean id="sqlSessionTemplate" class="org.mybatis.spring.SqlSessionTemplate">
+		<constructor-arg name="sqlSessionFactory" index="0" ref="sqlSessionFactory"/>
+	</bean>
+	
+	
+	<!-- 
+		Service가 요청하는 요청을 기존에는 DAOImpl이 받아서 처리했다면, 지금부터는 Mapper 인터페이스가 받아 처리할 수 있도록
+		MapperScannerConfigurer을 통해 mapper의 위치를 받아 Mapper한테 요청하면 Mapper는 DAO의 역할을 담당하고 있으므로
+		받은 요청과 연결되어 있는 쿼리를 대신 실행시켜준다.
+		이때, Mapper 인터페이스의 쿼리파이드 경로가 (인터페이스의 위치)가 namespace가 되고, 인터페이스의 메소드(기능)명이
+		쿼리의 id가 된다. 그렇기 때문에 인터페이스의 메소드를 호출하는건 곧 query xml 파일 내 namespace.id를 호출하는 것과 같다.
+		
+		Mapper 인터페이스 설정
+		개발자가 직접 DAO를 설정하지 않아도 자동으로 Mapper 인터페이스를 활용하는 객체를 생성하게 된다.
+	 -->
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="basePackage" value="kr.or.ddit.**.mapper"/>	
+	</bean>
+	
+	
+	
+	<!-- 스프링 AOP 활성화 -->
+	<aop:aspectj-autoproxy/>
+	
+<!-- 	<context:component-scan base-package="kr.or.ddit"> -->
+<!-- 		<context:include-filter type="annotation" expression="org.springframework.stereotype.Service"/> -->
+<!-- 		<context:include-filter type="annotation" expression="org.springframework.stereotype.Repository"/> -->
+<!-- 		<context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller"/> -->
+<!-- 	</context:component-scan> -->
+	
+	<!-- 트랜잭션 관리자의 빈 정의 -->
+	<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource"></property>
+	</bean>
+	<tx:advice id="txAdvice" transaction-manager="transactionManager">
+	   <tx:attributes>	 
+	       <tx:method name="*" propagation="REQUIRED" rollback-for="Exception"/>
+	   </tx:attributes>
+	</tx:advice>
+    
+	<aop:config>
+		<aop:pointcut id="requiredTx" expression="execution(* egovframework.com..*Impl.*(..)) or
+												  execution(* org.egovframe.rte.fdl.excel.impl.*Impl.*(..))"/>
+		<aop:advisor advice-ref="txAdvice" pointcut-ref="requiredTx" />
+	</aop:config>
+	
+	<!-- 어노테이션 기반의 트랜잭션 제어를 활성화합니다. -->
+	<tx:annotation-driven/>
+	
+	
+
+		
+</beans>

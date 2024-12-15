@@ -1,0 +1,591 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.common.approval.mapper.IApprovalMapper">
+
+  	<resultMap id="ApprovalResultMap" type="ApprovalVO">
+	    <result property="apprId" column="appr_id"/>
+	    <result property="formNo" column="form_no"/>
+	    <result property="apprTitle" column="appr_title"/>
+	    <result property="apprContent" column="appr_content" jdbcType="CLOB" javaType="java.lang.String"/>
+	    <result property="regDate" column="reg_date"/>
+	    <result property="apprImport" column="appr_import"/>
+	    <result property="apprStatus" column="appr_status"/>
+	    <result property="apprTmprDy" column="appr_tmpr_dy"/>
+	    <result property="completeDate" column="complete_date"/>
+	    <result property="senderName" column="sender_name"/>
+	    <result property="myOrder" column="my_order"/>
+	    <result property="apprOrder" column="appr_order"/>
+	</resultMap>
+	
+	<select id="getApprovalList" resultMap="ApprovalResultMap" parameterType="int">
+		SELECT 
+		    a.appr_id,
+		    a.form_no,
+		    a.appr_title,
+		    a.appr_content,
+		    TO_CHAR(a.reg_date, 'YYYY-MM-DD') AS reg_date,
+		    a.appr_import,
+		    a.appr_status,
+		    a.appr_tmpr_dy,
+		    a.complete_date,
+		    a.mem_no,
+		    a.file_no,
+		    a.sec_no,
+		    m.mem_name AS sender_name,
+		    alm.appr_order AS my_order,
+		    NVL((SELECT MAX(alm2.appr_order) 
+		         FROM APPROVAL_LINE_MEMBER alm2 
+		         WHERE alm2.appr_id = a.appr_id AND alm2.appr_yn = 'Y'), 0) AS appr_order
+		FROM 
+		    APPROVAL a
+		LEFT JOIN 
+		    APPROVAL_LINE_MEMBER alm ON a.appr_id = alm.appr_id AND alm.mem_no = #{memNo}
+		JOIN 
+		    MEMBER m ON a.mem_no = m.mem_no
+		WHERE 
+		    a.mem_no = #{memNo} OR alm.mem_no = #{memNo}
+		ORDER BY 
+		    a.reg_date DESC
+	</select>
+	
+	<select id="getApproval" parameterType="ApprovalVO" resultMap="ApprovalResultMap">
+	    SELECT
+	        a.appr_id,
+	        a.form_no,
+	        a.appr_title,
+	        a.appr_content,
+	        TO_CHAR(a.reg_date, 'YYYY-MM-DD') AS reg_date,
+	        a.appr_import,
+	        a.appr_status,
+	        a.appr_tmpr_dy,
+	        a.complete_date,
+	        a.mem_no,
+	        a.file_no,
+	        a.sec_no,
+	        m.mem_name AS sender_name,
+	        alm.appr_order AS my_order,
+	        NVL((SELECT MAX(alm2.appr_order)
+	             FROM APPROVAL_LINE_MEMBER alm2
+	             WHERE alm2.appr_id = a.appr_id AND alm2.appr_yn = 'Y'), 0) AS appr_order
+	    FROM
+	        approval a
+	    LEFT JOIN 
+	        APPROVAL_LINE_MEMBER alm ON a.appr_id = alm.appr_id AND alm.mem_no = #{memNo}
+	    JOIN
+	        member m ON a.mem_no = m.mem_no
+	    WHERE
+	        a.appr_id = #{apprId}
+	</select>
+	
+	
+	<insert id="registerSeal" parameterType="SealVO">
+		INSERT INTO seal (
+		    mem_no
+		    , seal_img
+		    , seal_name
+		) VALUES (
+		    #{memNo}
+		  , #{sealImg}
+		  , #{sealName}
+		)
+	</insert>
+	
+	<select id="getSealList" parameterType="int" resultType="SealVO">
+		SELECT 
+		    mem_no
+		  , seal_img
+		  , seal_name
+		  , sel_img
+		FROM
+		    seal
+		where mem_no=#{memNo}
+	</select>
+	
+	<update id="selSealUpdate" parameterType="SealVO">
+		UPDATE seal
+		SET
+		    sel_img = #{sealImg}
+		WHERE
+		    mem_no = #{memNo}
+	</update>
+	
+	<select id="approvalFormList" resultType="ApprovalFormVO">
+		 SELECT
+		    form_no
+		  , form_title
+		  , form_category
+		  , form_content
+		  , TO_CHAR(reg_date, 'YYYY-MM-DD') AS reg_date
+		FROM
+		    approval_form
+		where del_yn='N'
+	</select>
+	
+	<select id="getApprovalForm" parameterType="int" resultType="ApprovalFormVO">
+		 SELECT
+		    form_no
+		  , form_title
+		  , form_category
+		  , form_content
+		  , TO_CHAR(reg_date, 'YYYY-MM-DD') AS reg_date
+		FROM
+		    approval_form
+		where form_no=#{formNo}
+		and del_yn='N'
+	</select>
+	
+	<select id="approvalDeptList" resultType="DepartmentVO">
+		SELECT
+		    dept_no
+		  , dept_name
+		FROM
+		    department
+	</select>
+	
+	<select id="approvalMemList" resultType="MemberVO">
+	    SELECT
+	        M.MEM_NO,
+	        M.POS_NO,
+	        M.DEPT_NO,
+	        M.WT_NO,
+	        M.MEM_ID,
+	        M.MEM_PW,
+	        M.MEM_NAME,
+	        M.MEM_TEL,
+	        M.MEM_EMAIL,
+	        M.MEM_ADDR1,
+	        M.MEM_ADDR2,
+	        M.MEM_POST,
+	        TO_CHAR(M.HIRE_DATE, 'YYYY-MM-DD') AS HIRE_DATE,
+	        M.MEM_STATUS,
+	        M.DRIVER_LICENSE,
+	        M.MEM_PROFILEIMG,
+	        M.TEMP_PW_YN,
+	        M.ENABLED,
+	        M.WORK_VACA,
+	        M.DRIVE_VOLUME,
+	        M.MEM_CARD_IMAGE,
+	        M.MEM_CARD_MEMO,
+	        P.POS_NAME,
+	        D.DEPT_NAME
+	    FROM MEMBER M
+	    LEFT JOIN DEPARTMENT D ON M.DEPT_NO = D.DEPT_NO
+	    LEFT JOIN POSITION P ON M.POS_NO = P.POS_NO
+	    ORDER BY M.POS_NO DESC
+	</select>
+	
+	<insert id="registerApproval" parameterType="ApprovalVO" useGeneratedKeys="true">
+	
+		<selectKey keyProperty="apprId" resultType="String" order="BEFORE">
+			SELECT TO_CHAR(SYSDATE, 'YYYYMMDD') || '_' || #{formNo} || '_' || seq_approval.NEXTVAL FROM dual
+		</selectKey>
+		
+		insert into approval
+			(appr_id,FORM_NO, REG_DATE, APPR_IMPORT,APPR_STATUS,APPR_TMPR_DY, MEM_NO,APPR_CONTENT, file_NO, sec_no )
+		values(
+			#{apprId},#{formNo},sysdate,'N','임시','N',#{memNo},#{apprContent},#{fileNo},#{secNo}
+		)
+	
+	</insert>
+	
+	<insert id="registerLine" parameterType="ApprovalLineMemberVO">
+		insert into APPROVAL_LINE_MEMBER
+			(APPR_ID,APPR_ORDER,MEM_NO,APPR_YN)
+		values(
+			#{apprId},#{apprOrder},#{memNo},'N'
+		)
+	</insert>
+	
+	<insert id="registerRef" parameterType="ReferenceVO">
+		insert into REFERENCE
+			(APPR_ID, MEM_NO)
+		values(
+			#{apprId},#{memNo}
+		)
+	</insert>
+	
+	<insert id="registerRead" parameterType="ReadingVO">
+		insert into READING
+			(APPR_ID, MEM_NO)
+		values(
+			#{apprId},#{memNo}
+		)
+	</insert>
+	
+	<update id="updateAppr" parameterType="ApprovalVO">
+		UPDATE approval
+		SET
+		    APPR_TITLE = #{apprTitle},
+		    appr_content= #{apprContent},
+		    appr_status='진행중',
+		    APPR_IMPORT=#{apprImport},
+		    FILE_NO=#{fileNo}
+		WHERE
+		        appr_id = #{apprId}
+	</update>
+	
+	<select id="getApprovalLine" parameterType="String" resultType="ApprovalLineMemberVO">
+	    SELECT 
+	        alm.appr_id, 
+	        alm.appr_order,
+	        alm.appr_role, 
+	        alm.mem_no AS mem_no,
+	        alm.appr_yn, 
+	        alm.appr_time, 
+	        alm.appr_rsn, 
+	        m.mem_name AS mem_name,
+	        m.pos_no,
+	        p.pos_name AS pos_name,
+	        a.agency_no AS agency_no,
+	        gm.mem_name AS agency_name
+	    FROM 
+	        approval_line_member alm
+	    JOIN 
+	        member m ON alm.mem_no = m.mem_no
+	    JOIN 
+	        position p ON m.pos_no = p.pos_no
+	    LEFT JOIN 
+	        agency a ON alm.mem_no = a.granter_no AND <![CDATA[SYSDATE >= a.start_date AND SYSDATE <= a.end_date]]>
+	    LEFT JOIN 
+	        member gm ON a.agency_no = gm.mem_no
+	    WHERE 
+	        alm.appr_id = #{apprId}
+	    ORDER BY 
+	        alm.appr_order ASC
+	</select>
+	
+	<select id="getReferenceMemberList" parameterType="String" resultType="ReferenceVO">
+    	SELECT
+	        r.appr_id, r.mem_no, m.mem_name, p.pos_name
+	    FROM reference r
+	    JOIN member m ON r.mem_no = m.mem_no
+	    JOIN position p ON m.pos_no = p.pos_no
+	    WHERE r.appr_id = #{apprId}
+	</select>
+	
+	<select id="getReadMemberList" parameterType="String" resultType="ReadingVO">
+	    SELECT
+	        r.appr_id, r.mem_no, m.mem_name, p.pos_name
+	    FROM reading r
+	    JOIN member m ON r.mem_no = m.mem_no
+	    JOIN position p ON m.pos_no = p.pos_no
+	    WHERE r.appr_id = #{apprId}
+	</select>
+	
+	<select id="getSeal" parameterType="int" resultType="SealVO">
+	    SELECT DISTINCT
+	        sel_img
+	    FROM seal
+	    WHERE mem_no = #{memNo}
+	</select>
+	
+	<update id="doApproval" parameterType="ApprovalLineMemberVO">
+		UPDATE APPROVAL_LINE_MEMBER
+		SET
+		    APPR_YN='Y',
+		    APPR_TIME=sysdate
+		    
+		WHERE
+		        appr_id = #{apprId} and
+		        mem_no=#{memNo}
+	</update>
+	
+	<update id="updateRsn" parameterType="ApprovalLineMemberVO">
+		UPDATE APPROVAL_LINE_MEMBER
+		SET
+		    APPR_RSN=#{apprRsn}
+		WHERE
+		    appr_id = #{apprId} and
+		    mem_no=#{memNo}
+	</update>
+	
+	
+	<select id="checkApprovalStatus" parameterType="ApprovalVO" resultType="int">
+	    SELECT COUNT(*)
+	    FROM approval_line_member
+	    WHERE appr_id = #{apprId} AND appr_yn = 'N'
+	</select>
+
+	<update id="approvalSeal" parameterType="ApprovalVO">
+		update approval
+		set
+			appr_content=#{apprContent},
+			appr_status=#{apprStatus}
+		where
+			appr_id = #{apprId}
+	</update>
+	
+	<select id="getMember" parameterType="int" resultType="MemberVO">
+		select * from member
+		where mem_no=#{memNo}
+	</select>
+	
+	<select id="getAgencyList" parameterType="int" resultType="AgencyVO">
+		SELECT
+		    a.agency_no
+		  , a.granter_no
+		  ,TO_CHAR(a.start_date, 'YYYY-MM-DD') AS start_date
+		  ,TO_CHAR(a.end_date, 'YYYY-MM-DD') AS end_date
+		  , a.agency_content
+		  ,m.mem_name as agency_name
+		FROM agency a
+		JOIN member m ON a.granter_no = m.mem_no
+		where GRANTER_NO=#{granterNo}
+	</select>
+	
+	<select id="getDeptMemList" parameterType="MemberVO" resultType="MemberVO">
+			    SELECT
+	        M.MEM_NO,
+	        M.POS_NO,
+	        M.DEPT_NO,
+	        M.WT_NO,
+	        M.MEM_ID,
+	        M.MEM_PW,
+	        M.MEM_NAME,
+	        M.MEM_TEL,
+	        M.MEM_EMAIL,
+	        M.MEM_ADDR1,
+	        M.MEM_ADDR2,
+	        M.MEM_POST,
+	        TO_CHAR(M.HIRE_DATE, 'YYYY-MM-DD') AS HIRE_DATE,
+	        M.MEM_STATUS,
+	        M.DRIVER_LICENSE,
+	        M.MEM_PROFILEIMG,
+	        M.TEMP_PW_YN,
+	        M.ENABLED,
+	        M.WORK_VACA,
+	        M.DRIVE_VOLUME,
+	        M.MEM_CARD_IMAGE,
+	        M.MEM_CARD_MEMO,
+	        P.POS_NAME,
+	        D.DEPT_NAME
+	    FROM MEMBER M
+	    LEFT JOIN DEPARTMENT D ON M.DEPT_NO = D.DEPT_NO
+	    LEFT JOIN POSITION P ON M.POS_NO = P.POS_NO
+		where m.dept_no=#{deptNo}
+		and m.mem_no !=#{memNo}
+		ORDER BY M.POS_NO DESC
+	</select>
+	
+	<insert id="saveAbsence" parameterType="AgencyVO">
+		INSERT INTO agency (
+		    agency_no
+		    , granter_no
+		    , start_date
+		    , end_date
+		    , agency_content
+		) VALUES (
+		    #{agencyNo}
+		  , #{granterNo}
+		  , #{startDate}
+		  , #{endDate}
+		  , #{agencyContent}
+		)
+	</insert>
+	
+	<delete id="deleteApprLineByApprId" parameterType="String">
+		DELETE FROM APPROVAL_LINE_MEMBER WHERE appr_id = #{apprId}
+	</delete>
+	
+	<delete id="deleteRefByApprId" parameterType="String">
+		DELETE FROM REFERENCE WHERE appr_id = #{apprId}
+	</delete>
+	
+	<delete id="deleteReadApprId" parameterType="String">
+		DELETE FROM reading WHERE appr_id = #{apprId}
+	</delete>
+	
+	<select id="refApprList" parameterType="int" resultType="ApprovalVO">
+	    SELECT 
+	        a.appr_id, 
+	        a.form_no, 
+	        a.appr_title, 
+	        TO_CHAR(a.reg_date, 'YYYY-MM-DD') AS reg_date,
+	        a.appr_import,
+	        a.appr_status, 
+	        a.appr_tmpr_dy,
+	        a.complete_date, 
+	        a.mem_no, 
+	        a.appr_content,
+	        a.file_no 
+	    FROM 
+	        APPROVAL a
+	    JOIN 
+	        REFERENCE r ON a.appr_id = r.appr_id
+	    WHERE 
+	        r.mem_no = #{memNo}
+	        AND a.appr_status IN ('완료', '진행중')
+	</select>
+
+    <select id="readApprList" parameterType="int" resultType="ApprovalVO">
+        SELECT 
+	        a.appr_id, 
+	        a.form_no, 
+	        a.appr_title, 
+	        TO_CHAR(a.reg_date, 'YYYY-MM-DD') AS reg_date, 
+	        a.appr_import, 
+	        a.appr_status, 
+	        a.appr_tmpr_dy, 
+	        a.complete_date, 
+	        a.mem_no, 
+	        a.appr_content, 
+	        a.file_no 
+	    FROM 
+	        APPROVAL a
+	    JOIN 
+	        READING r ON a.appr_id = r.appr_id
+	    WHERE 
+	        r.mem_no = #{memNo}
+	        AND a.appr_status = '완료'
+    </select>
+    
+    <insert id="registerFavoriteForm" parameterType="FavoriteFormVO">
+    	INSERT INTO favorite_form (
+		    mem_no
+		    ,form_no
+		) VALUES (
+		    #{memNo}
+		  , #{formNo}
+		)
+    </insert>
+    
+    <select id="getFavoriteFormList" parameterType="int" resultType="ApprovalFormVO">
+    	select f.form_no, f.mem_no, af.form_content,af.form_title, af.form_category
+    	from FAVORITE_FORM f
+    	join APPROVAL_FORM af on f.form_no = af.form_no
+    	where f.mem_no=#{memNo}
+    </select>
+    
+    <select id="getApprRsnWithMemberInfo" parameterType="String" resultType="ApprovalLineMemberVO">
+	    SELECT 
+	        ALM.APPR_RSN,
+	        ALM.APPR_ID,
+	        ALM.MEM_NO,
+	        M.MEM_NAME,
+	        P.POS_NAME,
+	        D.DEPT_NAME
+	    FROM 
+	        APPROVAL_LINE_MEMBER ALM
+	    JOIN 
+	        MEMBER M ON ALM.MEM_NO = M.MEM_NO
+	    JOIN 
+	        POSITION P ON M.POS_NO = P.POS_NO
+	    JOIN 
+	        DEPARTMENT D ON M.DEPT_NO = D.DEPT_NO
+	    WHERE 
+	        ALM.APPR_ID = #{apprId}
+	        AND ALM.APPR_RSN IS NOT NULL
+	</select>
+    
+    <update id="cancelAppr" parameterType="String">
+    	UPDATE APPROVAL_LINE_MEMBER
+		SET
+		    APPR_YN='N'
+		WHERE
+	        appr_id = #{apprId}
+    </update>
+    
+    <update id="updateApprLine" parameterType="ApprovalLineMemberVO">
+    	UPDATE APPROVAL_LINE_MEMBER
+    	SET
+    		MEM_NO=#{memNo}
+    	WHERE
+    		appr_id = #{apprId}
+    	AND
+    		APPR_ORDER = #{apprOrder}
+    </update>
+    
+    <select id="chkVaction" parameterType="UseVacationVO" resultType="int">
+	    SELECT COUNT(*)
+	    FROM USE_VACATION
+	    WHERE MEM_NO = #{memNo}
+	      AND VCT_START = #{vctStart}
+	      AND VCT_END = #{vctEnd}
+	</select>
+	
+	<insert id="registerVct" parameterType="UseVacationVO">
+	    INSERT INTO USE_VACATION (
+	        USE_VCT_NO,
+	        VCT_TYPE_NO,
+	        MEM_NO,
+	        USE_DT,
+	        VCT_CONT,
+	        VCT_START,
+	        VCT_END
+	    ) VALUES (
+	        SEQ_USEVACATION_NO.NEXTVAL,
+	        #{vctTypeNo},
+	        #{memNo},
+	        #{useDt},
+	        #{vctCont},
+	        TRUNC(TO_DATE(#{vctStart}, 'YYYY-MM-DD')),
+        	TRUNC(TO_DATE(#{vctEnd}, 'YYYY-MM-DD'))
+	    )
+	</insert>
+	
+	<select id="getVacationDec" parameterType="int" resultType="String">
+		SELECT VCT_DEC
+	    FROM SUBVACATION_TYPE
+	    WHERE VCT_TYPE_NO = #{vctTypeNo}
+	</select>
+	
+	<update id="deductVacation" parameterType="UseVacationVO">
+		UPDATE MEMBER
+	    SET WORK_VACA = WORK_VACA - #{useDt}
+	    WHERE MEM_NO = #{memNo}
+	</update>
+	
+	<select id="getNextMember" parameterType="ApprovalLineMemberVO" resultType="ApprovalLineMemberVO">
+		select * from APPROVAL_LINE_MEMBER
+		where appr_id = #{apprId}
+		and appr_order = #{apprOrder}
+	</select>
+	
+	<select id="getWaitingApprovalList" parameterType="int" resultType="ApprovalVO">
+	    <![CDATA[
+	    SELECT * FROM (
+	        SELECT 
+	            a.appr_id,
+	            a.form_no,
+	            a.appr_title,
+	            a.appr_content,
+	            TO_CHAR(a.reg_date, 'YYYY-MM-DD') AS reg_date,
+	            a.appr_import,
+	            a.appr_status,
+	            a.appr_tmpr_dy,
+	            a.complete_date,
+	            a.mem_no,
+	            a.file_no,
+	            a.sec_no,
+	            m.mem_name AS sender_name,
+	            alm.appr_order AS my_order,
+	            NVL((SELECT MAX(alm2.appr_order) 
+	                 FROM APPROVAL_LINE_MEMBER alm2 
+	                 WHERE alm2.appr_id = a.appr_id AND alm2.appr_yn = 'Y'), 0) AS appr_order
+	        FROM 
+	            APPROVAL a
+	        LEFT JOIN 
+	            APPROVAL_LINE_MEMBER alm ON a.appr_id = alm.appr_id AND alm.mem_no = #{memNo}
+	        JOIN 
+	            MEMBER m ON a.mem_no = m.mem_no
+	        WHERE 
+	            a.appr_status = '진행중' 
+	            AND alm.appr_order = (SELECT NVL(MAX(alm2.appr_order), 0) + 1
+	                                  FROM APPROVAL_LINE_MEMBER alm2
+	                                  WHERE alm2.appr_id = a.appr_id AND alm2.appr_yn = 'Y')
+	            AND alm.mem_no = #{memNo}
+	        ORDER BY 
+	            a.reg_date DESC
+	    )
+	    WHERE ROWNUM <= 5
+	    ]]>
+	</select>
+	
+	<select id="getApprovalLineMember" parameterType="ApprovalLineMemberVO" resultType="ApprovalLineMemberVO">
+		select * from APPROVAL_LINE_MEMBER
+		where APPR_ID = #{apprId}
+		and MEM_NO = #{memNo}
+	</select>
+</mapper>

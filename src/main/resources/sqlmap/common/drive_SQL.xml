@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  <mapper namespace="kr.or.ddit.common.drive.mapper.IDriveMapper">
+
+	<select id="getFolderPaths" parameterType="int" resultType="DriveFolderVO">
+	SELECT f.folder_name, f.FOLDER_NO, LEVEL
+	FROM Drive_Folder f
+	START WITH f.FOLDER_NO = #{folderNo}
+	CONNECT BY PRIOR f.FOLDER_PARENT_NO = f.FOLDER_NO
+	ORDER BY LEVEL DESC
+	</select>
+
+	<select id="getOriginalDriveFile" parameterType="int" resultType="DriveFileVO">
+		select df_name, df_path, df_size, df_mime
+		from drive_file
+		where df_no = #{dfNo}
+	</select>
+
+
+  <select id="getDriveFileList" resultType="DriveFileVO">
+  	select f.DF_NO, f.MEM_NO, f.DF_NAME, f.DF_SIZE, f.DF_MIME, f.DF_CREATE, f.DF_PATH, f.DF_TYPE
+	from DRIVE_FILE f
+	where FOLDER_NO is null and DF_DEL_YN='N'
+  </select>
+  
+  <select id="getDriveFolderList" resultType="DriveFolderVO">
+  select fd.FOLDER_NO, fd.FOLDER_NAME, fd.FOLDER_CREATE, fd.FOLDER_TYPE
+	from DRIVE_FOLDER fd
+	where FOLDER_PARENT_NO is null and FOLDER_DEL_YN = 'N'
+  ORDER BY folder_name ASC
+  </select>
+  
+  <insert id="registerFile" parameterType="DriveFileVO">
+	INSERT INTO drive_file (
+	    df_no,
+	    folder_no,
+	    mem_no,
+	    df_name,
+	    df_path,
+	    df_size,
+	    df_mime,
+	    df_create,
+	    df_update,
+	    df_type
+	) VALUES (
+	    seq_dfile.nextval,
+	    decode(#{folderNo}, 0,NULL, #{folderNo}),
+	    #{memNo},
+	    #{dfName},
+	    #{dfPath},
+	    #{dfSize},
+	    #{dfMime},
+		sysdate,
+	    null,
+	    #{dfType}
+	)
+  </insert>
+  
+  <select id="getDriveFile" parameterType="int" resultType="DriveFileVO">
+  	select f.DF_NO, f.MEM_NO, f.DF_NAME, f.DF_SIZE, f.DF_MIME, f.DF_CREATE, f.DF_PATH, f.FOLDER_NO
+	from DRIVE_FILE f
+	where f.DF_NO = #{dfNo} and DF_DEL_YN = 'N'
+  </select>
+  
+  <select id="getFoldersInFolder" parameterType="int" resultType="DriveFolderVO">
+  select*from drive_folder
+  where folder_parent_no = #{folderNo} and FOLDER_DEL_YN = 'N'
+  ORDER BY folder_name ASC
+  </select>
+  
+  
+  <select id="getFilesInFolder" parameterType="int" resultType="DriveFileVO">
+  select*from drive_file
+  where folder_no = #{folderNo} and DF_DEL_YN = 'N'
+  ORDER BY df_create ASC
+  </select>
+  
+  <select id="getUpperFolderNo" parameterType="int" resultType="DriveFolderVO">
+  select*from drive_folder
+  where folder_no = decode(#{folderNo}, 0,NULL, #{folderNo}) and FOLDER_DEL_YN = 'N'
+  </select>
+  
+  <select id="getUnderFolderList" resultType="DriveFolderVO">
+  select*from drive_folder
+  where FOLDER_PARENT_NO is not null and FOLDER_DEL_YN = 'N'
+  ORDER BY folder_name ASC
+  </select>
+  
+  <select id="getUnderFileList" resultType="DriveFileVO">
+  select*from drive_file
+  where FOLDER_NO is not null and DF_DEL_YN = 'N'
+  </select>
+  
+  <select id="getFolderType" resultType="int" parameterType="int">
+  select folder_type from drive_folder
+  where folder_No = #{folderNo}
+  </select>
+  
+  <insert id="registerFolder">
+  INSERT INTO drive_folder (
+    folder_no,
+    mem_no,
+    folder_name,
+    folder_parent_no,
+    folder_create,
+    folder_type,
+    folder_del_yn
+	) VALUES (
+    seq_dfolder.nextval,
+    #{memNo},
+    #{folderName},
+    decode(#{folderParentNo}, 0,NULL, #{folderParentNo}),
+    sysdate,
+    #{folderType},
+    'N'
+)
+  </insert>
+  
+  <update id="deleteFile" parameterType="DriveFileVO">
+  UPDATE drive_file
+    SET
+        DF_DEL_YN = 'Y',
+        DF_UPDATE = sysdate
+	WHERE
+	    df_no = #{dfNo}
+  </update>
+  
+  <update id="deleteFileInFolder" parameterType="DriveFolderVO">
+	UPDATE Drive_File f
+	SET f.df_del_yn = 'Y'
+	WHERE f.FOLDER_NO IN (
+		SELECT folder_no
+		FROM Drive_Folder
+		START WITH folder_no = #{folderNo}
+		CONNECT BY PRIOR folder_no = folder_parent_no
+	)
+  </update>
+  
+  <update id="deleteFolderInFolder" parameterType="DriveFolderVO">
+  	UPDATE Drive_Folder f
+	SET f.folder_del_yn = 'Y'
+	WHERE f.FOLDER_NO IN (
+		SELECT folder_no
+		FROM Drive_Folder
+		START WITH folder_no = #{folderNo}
+		CONNECT BY PRIOR folder_no = folder_parent_no
+	)
+  </update>
+  
+  <select id="getDfNoInFolder" resultType="DriveFileVO" parameterType="int">
+  SELECT f.df_path
+	FROM Drive_File f
+	WHERE f.FOLDER_NO IN (
+    SELECT folder_no
+    FROM Drive_Folder
+    START WITH FOLDER_NO = #{folderNo}
+    CONNECT BY PRIOR FOLDER_NO = FOLDER_PARENT_NO
+	)
+  </select>
+  
+  <select id="getDfNo" resultType="DriveFileVO" parameterType="int">
+  select df_path
+  from drive_file
+  where df_no = #{dfNo}
+  </select>
+  
+  <select id="getSelectedFolders" resultType="DriveFolderVO" parameterType="int">
+  SELECT f.*, LEVEL
+	FROM Drive_Folder f
+	START WITH f.FOLDER_NO = #{folderNo}
+	CONNECT BY PRIOR f.FOLDER_NO = f.FOLDER_PARENT_NO
+	ORDER BY LEVEL, f.FOLDER_NO
+  </select>
+  
+  <select id="searchFile" parameterType="String" resultType="DriveFileVO">
+  SELECT * 
+  FROM Drive_File
+	WHERE df_name LIKE '%' || #{searchWord} || '%'
+	and df_del_yn = 'N'
+  </select>
+  
+  <select id="searchFolder" parameterType="String" resultType="DriveFolderVO">
+  SELECT * 
+  FROM Drive_Folder
+	WHERE folder_name LIKE '%' || #{searchWord} || '%'
+	and folder_del_yn = 'N'
+  ORDER BY folder_name ASC
+  </select>
+  
+  <update id="moveFolder" parameterType="DriveFolderVO">
+  UPDATE drive_folder
+	SET
+	    folder_parent_no = decode(#{folderParentNo}, 0,NULL, #{folderParentNo}),
+	    folder_type = #{folderType}
+	WHERE
+	        folder_no = #{folderNo}
+  </update>
+  
+  <update id="moveFile" parameterType="DriveFileVO">
+  UPDATE drive_file
+	SET
+	    folder_no = decode(#{folderNo}, 0,NULL, #{folderNo}),
+	    df_type = #{dfType}
+	WHERE
+        df_no = #{dfNo}
+  </update>
+  
+  <select id="gettotalByte" resultType="DriveFileVO">
+  select df_size
+  from
+  drive_file
+  where df_del_yn = 'N'
+  </select>
+  
+</mapper>

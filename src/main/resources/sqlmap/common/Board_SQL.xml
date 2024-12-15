@@ -1,0 +1,460 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.common.board.mapper.BoardMapper">
+
+	<insert id="insertBoard" parameterType="BoardVO" >
+	
+		<selectKey keyProperty="boardNo" resultType="int" order="BEFORE">
+			select seq_board.nextval from dual
+		</selectKey>
+		
+		INSERT INTO board (
+		    board_no,
+		    mem_no,
+		    post_no,
+		    board_title,
+		    board_content,
+		    board_create,
+		    board_update,
+		    board_type,
+		    post_type,
+		    board_notice,
+		    board_alarm,
+		    file_no,
+		    thumbnail_file_no
+		) VALUES (
+		    #{boardNo},
+		    #{memNo},
+		    <include refid="postNo"/>,
+		    #{boardTitle},
+		    #{boardContent},
+		    sysdate,
+		    sysdate,
+		    #{boardType},
+		    #{postType},
+		    #{boardNotice},
+		    #{boardAlarm},
+		    #{fileNo},
+		    #{thumbnailFileNo}
+		)
+	</insert>
+	
+	<sql id="postNo">
+	    <choose>
+	        <when test="postType == '사내공지'">
+	            seq_company.nextval
+	        </when>
+	        <when test="postType == '사내식단표'">
+	            seq_food.nextval
+	        </when>
+	        <when test="postType == '실적게시판'">
+	            seq_perfor.nextval
+	        </when>
+	        <when test="postType == '세미나회의'">
+	            seq_meeting.nextval
+	        </when>
+	        <when test="postType == '자유게시판'">
+	            seq_free.nextval
+	        </when>
+	        <when test="postType == '공모전'">
+	            seq_contest.nextval
+	        </when>
+	        <when test="postType == '행사활동'">
+	            seq_event.nextval
+	        </when>
+	        <when test="postType == '프로모션'">
+	            seq_promotion.nextval
+	        </when>
+	    </choose>
+	</sql>
+
+	
+	<insert id="insertBoardFile" parameterType="FilesVO" useGeneratedKeys="true" keyProperty="fileNo">
+	
+		<selectKey keyProperty="fileNo" resultType="int" order="BEFORE">
+			select seq_FILES.nextval from dual
+		</selectKey>
+		
+		INSERT INTO files (
+		    file_no,
+		    file_category,
+		    mem_no
+		) VALUES (
+		    #{fileNo},
+		    #{fileCategory},
+		    #{memNo}
+		)
+	</insert>
+	
+	
+	
+	<insert id="insertBoardDetailFile" parameterType="FilesDetailVO">
+		INSERT INTO file_detail (
+		    file_detail_no,
+		    file_no,
+		    file_path,
+		    file_size,
+		    file_mime,
+		    file_originalname,
+		    file_uploadname,
+		    reg_date,
+		    mem_no
+		) VALUES (
+		    seq_file_detail.nextval,
+		    #{fileNo},
+		    #{filePath},
+		    #{fileSize},
+		    #{fileMime},
+		    #{fileOriginalname},
+		    #{fileUploadname},
+		    sysdate,
+		    #{memNo}
+		)
+	</insert>
+	
+	<!-- 조회수 증가 쿼리 -->
+	<update id="incrementHit" parameterType="int">
+		update board
+		set
+			board_hit = board_hit + 1
+		where board_no = #{boardNo}
+	</update>
+	
+	
+	<select id="selectBoardList" resultType="BoardVO">
+		SELECT
+		 b.board_no,
+		 b.board_title,
+		 b.post_no,
+		 b.file_no,
+		 m.mem_name,
+		 TO_CHAR(b.board_create, 'YYYY-MM-DD') AS board_create,
+		 b.board_hit,
+		 fd.del_yn
+		FROM board b
+			INNER JOIN member m ON b.mem_no = m.mem_no
+			LEFT JOIN file_detail fd ON b.file_no = fd.file_no
+		ORDER BY b.board_no DESC
+	</select>
+
+	<select id="selectBoardNoticeList" parameterType="String" resultType="BoardVO">
+		SELECT *
+		FROM(
+			SELECT
+				 b.board_no,
+				 b.post_no,
+				 b.file_no,
+				 b.board_title,
+				 b.board_content,
+				 m.mem_name,
+				 TO_CHAR(b.board_create, 'YYYY-MM-DD') AS board_create,
+				 b.board_hit,
+				 b.board_notice,
+				 (SELECT fd.del_yn FROM file_detail fd WHERE fd.file_no = b.file_no AND ROWNUM = 1) AS del_yn
+			FROM board b
+				<include refid="memberJoin"/>
+			WHERE
+			 b.board_notice = 'Y'
+			 and b.post_type = #{postType}
+			ORDER BY b.board_create DESC
+		)
+		<![CDATA[
+		WHERE ROWNUM <= 3
+		]]>
+	</select>
+
+	<select id="selectBoardListNew" parameterType="PaginationInfoVO" resultType="BoardVO">
+		SELECT * FROM (
+			SELECT
+			 b.board_no,
+			 b.post_no,
+			 b.board_title,
+			 b.board_content,
+			 m.mem_name,
+			 b.file_no,
+			 TO_CHAR(b.board_create, 'YYYY-MM-DD') AS board_create,
+			 b.board_hit,
+			 b.board_notice,
+			 ROW_NUMBER() OVER (ORDER BY b.board_no DESC) AS rn,
+			 (SELECT fd.del_yn FROM file_detail fd WHERE fd.file_no = b.file_no AND ROWNUM = 1) AS del_yn
+			FROM board b
+				<include refid="memberJoin"/>
+			WHERE
+				b.board_notice = 'N'
+				and b.post_type = #{postType}
+				<include refid="boardSearch"/>
+			ORDER BY b.board_no DESC
+		)		
+		WHERE rn BETWEEN #{startRow} AND #{endRow}
+	</select>
+	
+	<select id="selectBoardCount" resultType="int" parameterType="PaginationInfoVO">
+		SELECT COUNT(*)
+		FROM board b
+		<include refid="memberJoin"/>
+		WHERE
+		 b.board_notice = 'N'
+		 and b.post_type = #{postType}
+		<include refid="boardSearch"/>
+	</select>
+	
+	<sql id="memberJoin">
+		LEFT JOIN member m ON b.mem_no = m.mem_no
+	</sql>
+	
+	<sql id="boardSearch">
+		<if test="searchWord != null and searchWord != ''">
+	        and (
+	            b.board_title like '%' || #{searchWord} || '%'
+	            or m.mem_name like '%' || #{searchWord} || '%'
+	            or b.board_content like '%' || #{searchWord} || '%'
+	        )
+  		</if>	
+	</sql>
+
+	
+	<select id="boardDownload" parameterType="FilesDetailVO" resultType="FilesDetailVO">
+		select *
+		  from file_detail
+		 where file_no = #{fileNo}
+		   and file_detail_no = #{fileDetailNo}
+	</select>
+	
+	
+	<select id="getId" parameterType="string" resultType="MemberVO">
+	   SELECT
+	       mem_no
+	   FROM
+	       member
+	   where mem_id = #{username}
+	</select>
+
+	<!-- 댓글 목록 조회 -->
+ 	<select id="selectBoardComments" parameterType="int" resultType="BoardCommentVO">
+		SELECT
+			C.cmnt_no,
+			C.cmnt_content,
+			C.mem_no,
+			M.MEM_NAME AS comment_writer,
+			C.reg_Date
+		FROM BOARD_COMENT C
+		JOIN MEMBER M ON C.MEM_NO = M.MEM_NO
+		WHERE C.BOARD_NO = #{boardNo}
+		ORDER BY C.REG_DATE ASC
+	</select>
+	
+	
+	<select id="selectBoardDetail" parameterType="int" resultType="BoardVO">
+		SELECT
+			B.board_no,
+			B.board_title,
+			B.board_content,
+			B.mem_no,
+			M.mem_name,
+			TO_CHAR(B.board_create, 'YYYY-MM-DD  HH:mm') AS board_create,
+			B.board_update,
+			B.board_hit,	
+			B.board_type,
+			B.post_type,
+			B.board_notice,
+			B.board_alarm,
+			B.post_img,
+			B.file_no,
+			B.thumbnail_file_no
+		FROM BOARD B
+		JOIN MEMBER M ON B.MEM_NO = M.MEM_NO
+		WHERE B.BOARD_NO = #{boardNo}
+	</select> 
+	
+	<insert id="insertComment" parameterType="BoardCommentVO">
+		INSERT INTO BOARD_COMENT (cmnt_no, board_no, cmnt_content, mem_no, reg_date)
+		VALUES (BOARD_COMENT_SEQ.NEXTVAL, #{boardNo}, #{cmntContent}, #{memNo}, SYSDATE)
+	</insert>
+	
+	<update id="updateComment" parameterType="BoardCommentVO">
+		UPDATE BOARD_COMENT
+		SET CMNT_CONTENT = #{cmntContent}
+		WHERE CMNT_NO = #{cmntNo}
+	</update>
+	
+	<delete id="deleteComment" parameterType="int">
+		DELETE FROM BOARD_COMENT WHERE CMNT_NO = #{cmntNo}
+	</delete>
+	
+	<delete id="deleteCommentsByBoardNo" parameterType="int">
+		DELETE FROM BOARD_COMENT WHERE BOARD_NO = #{boardNo}
+	</delete>
+	
+	<select id="selectAttachedFilesByFileNo" parameterType="int" resultType="FilesDetailVO">
+		SELECT file_detail_no, file_originalname, file_path
+		FROM FILE_DETAIL
+		WHERE FILE_NO = ${fileNo} AND DEL_YN = 'N'
+	</select>
+	
+	<select id="selectFileDetail" parameterType="int" resultType="FilesDetailVO">
+		SELECT file_path, file_originalname
+		FROM FILE_DETAIL
+		WHERE FILE_DETAIL_NO = ${fileDetailNo}
+	</select>
+	
+	<!-- 게시글 삭제 -->
+	<delete id="deleteBoard" parameterType="int">
+		DELETE FROM BOARD WHERE BOARD_NO = #{boardNo}
+	</delete>
+	
+	<update id="updateBoard" parameterType="BoardVO">
+		UPDATE BOARD
+		SET BOARD_TITLE = #{boardTitle}, BOARD_CONTENT = #{boardContent}, BOARD_UPDATE = SYSDATE
+		WHERE BOARD_NO = #{boardNo}
+	</update>
+	
+	<update id="updateBoardFileNo" parameterType="BoardVO">
+		UPDATE BOARD
+		SET FILE_NO = #{fileNo}
+		WHERE BOARD_NO = #{boardNo}
+	</update>
+	
+	<!-- 파일 삭제에 대한 논리적 삭제 처리 -->
+	<update id="markFileDetailAsDeletedByFileDetailNo" parameterType="int">
+		UPDATE FILE_DETAIL
+		SET DEL_YN = 'Y'
+		WHERE FILE_DETAIL_NO = #{fileDetailNo}
+	</update>
+
+	<select id="getFileNoByBoardNo" resultType="int">
+		SELECT FILE_NO
+		FROM BOARD
+		WHERE BOARD_NO = #{boardNo}
+	</select>
+	
+	<update id="markFileDetailAsDeletedByFileNo" parameterType="int">
+		UPDATE FILE_DETAIL
+		SET DEL_YN = 'Y'
+		WHERE FILE_NO = #{fileNo}
+	</update>
+	
+	<update id="markFileAsDeletedByFileNo" parameterType="int">
+		UPDATE FILES
+		SET DEL_YN = 'Y'
+		WHERE FILE_NO = #{fileNo}
+	</update>
+	
+	<select id="selectAlbumBoardList" parameterType="PaginationInfoVO" resultType="BoardVO">
+		SELECT * 
+		FROM (
+			SELECT ROWNUM AS rnum, b.board_no, b.board_title, b.board_content, b.mem_no, b.board_create, b.board_hit,
+			b.thumbnail_file_no, m.mem_name
+			FROM BOARD b
+			INNER JOIN member m
+				ON b.mem_no = m.mem_no
+			WHERE b.POST_TYPE = #{postType}
+			<include refid="boardSearch"/>
+			<![CDATA[
+			AND ROWNUM <= #{endRow}
+			ORDER BY b.BOARD_CREATE DESC
+		)
+		WHERE rnum >= #{startRow}
+		]]>
+	</select>
+	
+	<select id="selectPostsByPage" parameterType="map" resultType="BoardVO">
+		SELECT *
+		FROM (
+			SELECT
+				board_no,
+				board_title,
+				post_img,
+				board_content,
+				TO_CHAR(board_create, 'YYYY-MM-DD') AS board_create,
+				board_hit,
+				ROWNUM rnum
+			FROM (
+				SELECT
+					board_no,
+					board_title,
+					post_img,
+					board_content,
+					board_create,
+					board_hit
+				FROM board
+				WHERE post_type = #{postType}
+				ORDER BY board_no DESC
+			)
+			<![CDATA[
+			WHERE ROWNUM <= #{endRow}
+		)
+		WHERE rnum >= #{startRow}
+			]]>
+	</select>
+	<select id="selectThumbnailFileDetail" parameterType="int" resultType="FilesDetailVO">
+		SELECT fd.*
+		FROM FILE_DETAIL fd
+		INNER JOIN FILES f
+			ON fd.FILE_NO = f.FILE_NO
+		WHERE fd.FILE_NO = #{fileNo}
+		AND f.DEL_YN = 'N'
+		AND fd.DEL_YN = 'N'
+	</select>
+	
+	<update id="updateBoardThumbnailFileNo" parameterType="BoardVO">
+		UPDATE BOARD
+		SET THUMBNAIL_FILE_NO = #{thumbnailFileNo}
+		WHERE BOARD_NO = #{boardNo}
+	</update>
+	
+	
+	
+	<select id="memberAalarmList" resultType="MemberVO">
+       SELECT
+           MEM_NO
+       FROM MEMBER   
+   </select>
+	
+	
+	<select id="previousList" parameterType="BoardVO" resultType="BoardVO">
+		WITH Previous AS (
+	    SELECT BOARD_NO, BOARD_TITLE
+	    FROM (
+	        SELECT BOARD_NO, BOARD_TITLE
+	        FROM BOARD
+	        <![CDATA[
+	        WHERE BOARD_NO < #{boardNo} AND POST_TYPE = #{postType}
+	        ]]>
+	        ORDER BY BOARD_NO DESC  
+	    )
+	    WHERE ROWNUM = 1 
+		),
+		Next AS (
+		    SELECT BOARD_NO, BOARD_TITLE
+		    FROM (
+		        SELECT BOARD_NO, BOARD_TITLE
+		        FROM BOARD
+		        <![CDATA[
+		        WHERE BOARD_NO > #{boardNo} AND POST_TYPE = #{postType}
+		         ]]>
+		        ORDER BY BOARD_NO ASC 
+		    )
+		    WHERE ROWNUM = 1 
+		)
+		SELECT * FROM Previous
+		UNION ALL
+		SELECT * FROM Next
+		
+	</select>
+	
+	<!-- 홈 메인 화면 공지사랑 리스트 -->
+	<select id="homeNoticeList" resultType="BoardVO">
+		SELECT board_no,
+			   board_title,
+			   file_no,
+			   TO_CHAR(board_create, 'YYYY-MM-DD') AS board_create,
+			   board_notice
+    	from board 
+    	where board_notice = 'Y'
+    	ORDER BY board_create DESC
+	</select>
+	
+	
+</mapper>

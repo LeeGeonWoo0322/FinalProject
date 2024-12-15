@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:websocket="http://www.springframework.org/schema/websocket"
+       xsi:schemaLocation="
+           http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans.xsd
+           http://www.springframework.org/schema/websocket
+           http://www.springframework.org/schema/websocket/spring-websocket.xsd">
+
+     <bean id="chatHandler" class="kr.or.ddit.common.chat.web.ChatHandler" />
+
+    <websocket:handlers allowed-origins="*">
+    	<!-- <websocket:handshake-interceptors>는 WebSocketSession과 HttpSession이 별도로 존재해서 엔드포인트 가기전에
+    			중간에 인터셉트해서 HttpSession에 있는 값들을 WebSocketSession의 attribute로 넣어줌
+    	 -->
+    	<websocket:mapping handler="chatHandler" path="/ws-chat/{rmNo}" />
+  		<websocket:handshake-interceptors>
+  			<bean class="org.springframework.web.socket.server.support.HttpSessionHandshakeInterceptor" />
+  		</websocket:handshake-interceptors>
+  		
+	</websocket:handlers>
+
+</beans>

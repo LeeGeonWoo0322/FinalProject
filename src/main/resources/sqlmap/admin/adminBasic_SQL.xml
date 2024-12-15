@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.admin.basic.mapper.IAdminBasicMapper">
+
+	<select id="getUpgradeReqList" resultType="UpgradeReqVO">
+		SELECT
+		    ur.req_mem_no,
+		    m1.mem_name AS req_mem_name,
+		    m1.mail_volume,
+		    ur.resp_mem_no,
+		    m2.mem_name AS resp_mem_name,
+		    ur.req_coment,
+		    ur.req_date,
+		    ur.req_gb,
+		    ur.req_status,
+		    ur.resp_reason,
+		    ur.ur_no,
+		    ur.resp_date,
+		    COALESCE(SUM(fd.file_size), 0) AS total_file_size
+		FROM
+		    upgrade_req ur
+		JOIN
+		    files f ON ur.req_mem_no = f.mem_no
+		JOIN
+		    member m1 ON ur.req_mem_no = m1.mem_no
+		LEFT JOIN
+		    member m2 ON ur.resp_mem_no = m2.mem_no
+		LEFT JOIN
+		    file_detail fd ON f.file_no = fd.file_no
+		GROUP BY
+		    ur.req_mem_no,
+		    m1.mem_name,
+		    m1.mail_volume,
+		    ur.resp_mem_no,
+		    m2.mem_name,
+		    ur.req_coment,
+		    ur.req_date,
+		    ur.req_gb,
+		    ur.req_status,
+		    ur.resp_reason,
+		    ur.resp_date,
+		    ur.ur_no
+		ORDER BY
+			ur.ur_no desc
+	</select>
+	
+	<update id="updateUpgradeReq" parameterType="UpgradeReqVO">
+		update
+			upgrade_req
+		set
+			resp_mem_no = #{respMemNo}
+			, req_status = #{reqStatus}
+			, resp_reason = #{respReason}
+			, resp_date = sysdate
+		where
+			ur_no = #{urNo}
+	</update>
+	
+	<select id="getUpgradeReqByUrNo" parameterType="UpgradeReqVO" resultType="UpgradeReqVO">
+		SELECT
+		    ur.req_mem_no,
+		    m1.mem_name AS req_mem_name,
+		    m1.mail_volume,
+		    ur.resp_mem_no,
+		    m2.mem_name AS resp_mem_name,
+		    ur.req_coment,
+		    ur.req_date,
+		    ur.req_gb,
+		    ur.req_status,
+		    ur.resp_reason,
+		    ur.ur_no,
+		    ur.resp_date,
+		    COALESCE(SUM(fd.file_size), 0) AS total_file_size
+		FROM
+		    upgrade_req ur
+		JOIN
+		    files f ON ur.req_mem_no = f.mem_no
+		JOIN
+		    member m1 ON ur.req_mem_no = m1.mem_no
+		LEFT JOIN
+		    member m2 ON ur.resp_mem_no = m2.mem_no
+		LEFT JOIN
+		    file_detail fd ON f.file_no = fd.file_no
+		WHERE
+			ur_no = #{urNo}
+		GROUP BY
+		    ur.req_mem_no,
+		    m1.mem_name,
+		    m1.mail_volume,
+		    ur.resp_mem_no,
+		    m2.mem_name,
+		    ur.req_coment,
+		    ur.req_date,
+		    ur.req_gb,
+		    ur.req_status,
+		    ur.resp_reason,
+		    ur.resp_date,
+		    ur.ur_no
+	</select>
+	
+	<select id="searchReq" parameterType="UpgradeReqVO" resultType="UpgradeReqVO">
+		<![CDATA[
+			SELECT
+			    ur.req_mem_no,
+			    m1.mem_name AS req_mem_name,
+			    m1.mail_volume,
+			    ur.resp_mem_no,
+			    m2.mem_name AS resp_mem_name,
+			    ur.req_coment,
+			    ur.req_date,
+			    ur.req_gb,
+			    ur.req_status,
+			    ur.resp_reason,
+			    ur.ur_no,
+			    ur.resp_date,
+			    COALESCE(SUM(fd.file_size), 0) AS total_file_size
+			FROM
+			    upgrade_req ur
+			JOIN
+			    files f ON ur.req_mem_no = f.mem_no
+			JOIN
+			    member m1 ON ur.req_mem_no = m1.mem_no
+			LEFT JOIN
+			    member m2 ON ur.resp_mem_no = m2.mem_no
+			LEFT JOIN
+			    file_detail fd ON f.file_no = fd.file_no
+			WHERE
+				ur.req_date >= #{capacityReqStart} and ur.req_date <= #{capacityReqEnd}
+			GROUP BY
+			    ur.req_mem_no,
+			    m1.mem_name,
+			    m1.mail_volume,
+			    ur.resp_mem_no,
+			    m2.mem_name,
+			    ur.req_coment,
+			    ur.req_date,
+			    ur.req_gb,
+			    ur.req_status,
+			    ur.resp_reason,
+			    ur.resp_date,
+			    ur.ur_no
+			ORDER BY
+				ur.ur_no desc
+		]]>
+	</select>
+
+</mapper>

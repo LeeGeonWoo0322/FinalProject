@@ -1,0 +1,1807 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  <mapper namespace="kr.or.ddit.common.mail.mapper.IMailMapper">
+  
+  	<resultMap type="MailVO" id="MailMap">
+  		<id property="mailNo" column="mail_no"/>
+		<result property="mailNo" column="mail_no" />
+		<result property="memNo" column="mem_no" />
+		<result property="mailTitle" column="mail_title" />
+		<result property="mailContent" column="mail_content" />
+		<result property="mailDate" column="mail_date" />
+		<result property="fileNo" column="file_no" />
+		<result property="mailStatus" column="mail_status" />
+		<result property="mailRes" column="mail_res" />
+		<result property="mailImp" column="mail_imp" />
+		<result property="mailResDate" column="mail_res_date" />
+		<result property="mailFavYn" column="mail_fav_yn" />
+		<result property="mailReadYn" column="mail_read_yn" />
+		<result property="mailDelYn" column="mail_del_yn" />
+		<result property="mailGb" column="mail_gb" />
+		<collection property="recipientList" resultMap="recipientMap"/>
+  	</resultMap>
+  	
+  	<resultMap type="MailRecipientVO" id="recipientMap">
+		<result property="mailNo" column="mail_no" />
+		<result property="recipientNo" column="recipient_no" />
+		<result property="recipientName" column="recipient_name" />
+		<result property="recipientEmail" column="recipient_email" />
+		<result property="recipientDeptName" column="recipient_dept_name" />
+		<result property="recipientPosName" column="recipient_pos_name" />
+		<result property="recType" column="rec_type" />
+		<result property="recStatus" column="rec_status" />
+		<result property="recTime" column="rec_time" />
+		<result property="readYn" column="read_yn" />
+		<result property="mailboxNo" column="mailbox_no" />
+		<result property="recNo" column="rec_no" />
+		<result property="recFavYn" column="rec_fav_yn" />
+  	</resultMap>
+
+	<!-- 검색기능 시작 -->
+  	<sql id="mailSearch">
+		<if test="searchWord != null">
+	        and (
+	            m.mail_title like '%' || #{searchWord} || '%'
+	            or me.mem_name like '%' || #{searchWord} || '%'
+	            or m.mail_content like '%' || #{searchWord} || '%'
+	        )
+  		</if>	
+  	</sql>
+	<!-- 검색기능 끝 -->
+  	
+  	<insert id="insertFile" parameterType="FilesVO" useGeneratedKeys="true" keyProperty="fileNo">
+		<selectKey keyProperty="fileNo" resultType="int" order="BEFORE">
+ 			select seq_files.nextval from dual
+ 		</selectKey>  	
+  	
+  		INSERT INTO files (
+		    file_no
+		    , file_category
+		    , mem_no
+		) VALUES (
+		    #{fileNo}
+		  , #{fileCategory}
+		  , #{memNo}
+		)
+  	</insert>
+
+	<select id="getLastFile" resultType="FilesVO">
+		select file_no 
+		from (
+		    select file_no, ROW_NUMBER() over (order by file_no DESC) AS rn
+		    from files
+		    where del_yn = 'N'
+		) A
+		where A.rn = 1
+	</select>
+
+  	<insert id="insertFileDetail" parameterType="FilesDetailVO">
+  		
+  		INSERT INTO file_detail (
+		    file_no
+		    , file_detail_no
+		    , file_path
+		    , file_size
+		    , file_mime
+		    , file_originalname
+		    , file_uploadname
+		    , mem_no
+		) VALUES (
+		    #{fileNo}
+		  , seq_file_detail.nextval
+		  , #{filePath}
+		  , #{fileSize}
+		  , #{fileMime}
+		  , #{fileOriginalname}
+		  , #{fileUploadname}
+		  , #{memNo}
+		)
+  	</insert>
+  	
+	<insert id="insertMail" parameterType="MailVO" useGeneratedKeys="true" keyProperty="mailNo">
+		<selectKey keyProperty="mailNo" resultType="int" order="BEFORE">
+		  select seq_mail.nextval from dual
+		</selectKey>
+		
+		INSERT INTO mail (
+		    mail_no
+		    , mem_no
+		    , mail_title
+		    , mail_content
+		    , file_no
+		    , mail_status
+		    , mail_res
+		    , mail_imp
+		    , mail_read_yn
+		    , mail_security_yn
+		    <if test="mailResDate != 'null'">
+		      , mail_res_date
+		    </if>
+		) VALUES (
+		    #{mailNo}
+		  , #{memNo}
+		  , #{mailTitle}
+		  , #{mailContent}
+		  , #{fileNo}
+		  , #{mailStatus}
+		  , #{mailRes}
+		  , #{mailImp}
+		  , #{mailReadYn}
+		  , #{mailSecurityYn}
+		  <if test="mailResDate != 'null'">
+		    , TO_DATE(#{mailResDate}, 'YYYY-MM-DD HH24:MI:SS')
+		  </if>
+		)
+	</insert>
+
+  	<select id="getLastMail" resultType="MailVO">
+  		select B.*
+  		from
+			(
+			select A.*, row_number() over (order by A.mail_no desc) rnum
+			from
+			    (
+			    select
+			        mail_no
+			      , mem_no
+			      , mail_title
+			      , mail_content
+			      , mail_date
+			      , file_no
+			      , mail_status
+			      , mail_res
+			      , mail_imp
+			      , mail_fav_yn
+			      , mail_res_date
+			    from
+			        mail
+			    order by mail_no DESC
+			    )A
+			)B
+		where B.rnum = 1
+  	</select>
+
+  	<select id="getLastMailByNo" parameterType="MemberVO" resultType="MailRecipientVO">
+	    select
+	        c.*
+	    from (
+		    select
+		        b.*, row_number() over (order by b.mail_no desc) as mail_row_no2
+		    from (
+		        select
+		            a.*, row_number() over (order by a.mail_no) AS mail_row_no
+		        from (
+		            select
+		                mr.mail_no,
+		                mr.read_yn AS mailReadYn,
+		                mr.rec_fav_yn AS mailFavYn,
+		                me.mem_no,
+		                me.mem_name,
+		                me.mem_email,
+		                m.mail_title,
+		                m.mail_date,
+		                m.file_no,
+		                m.mail_security_yn,
+		                m.mail_imp,
+		                mr.rec_del_yn,
+		                mr.rec_no,
+		                mr.mail_gb
+		            from
+		                mail_recipient mr, member me, mail m
+		            where
+		                mr.recipient_no = #{memNo}
+	                    and mr.rec_status = '수신됨'
+	                    and mr.recipient_no != m.mem_no
+	                	and mr.mailbox_no is null
+		                and m.mem_no = me.mem_no and mr.rec_del_yn = 'N'
+		                and mr.mail_no = m.mail_no
+		        ) a
+		        order by a.mail_no desc
+		    ) b
+	    )c
+	    where c.mail_row_no2 = 1
+  	</select>
+  	
+  	<select id="getLastRecMail" resultType="MailRecipientVO">
+  		select B.*
+  		from
+			(
+			select A.*, row_number() over (order by A.rec_no desc) rnum
+			from
+			    (
+			    select
+					rec_no
+			    from
+			        mail_recipient
+			    order by rec_no DESC
+			    )A
+			)B
+		where B.rnum = 1
+  	</select>
+  	
+  	<select id="getRecipient" parameterType="String" resultType="MemberVO">
+  		 select
+		    mem_no
+		  , p.pos_no
+		  , d.dept_no
+		  , wt_no
+		  , mem_id
+		  , mem_pw
+		  , mem_name
+		  , mem_tel
+		  , mem_email
+		  , mem_addr1
+		  , mem_addr2
+		  , mem_post
+		  , hire_date
+		  , mem_status
+		  , driver_license
+		  , mem_profileimg
+		  , temp_pw_yn
+		  , enabled
+		  , work_vaca
+		  , drive_volume
+		  , mem_card_image
+		  , mem_card_memo
+		  , d.dept_name
+		  , p.pos_name
+		from
+		    member m, position p, department d
+		where
+		    mem_email = #{memEmail}
+		    and m.pos_no = p.pos_no and m.dept_no = d.dept_no
+  	</select>
+  		
+  		
+  	<insert id="insertRecipient" parameterType="MailRecipientVO">
+  		INSERT INTO mail_recipient (
+		      rec_no
+		    , mail_no
+		    , recipient_no
+		    , recipient_name
+		    , recipient_email
+		    , recipient_dept_name
+		    , recipient_pos_name
+		    , rec_type
+		    , rec_status
+		) VALUES (
+		    seq_mail_recipient.nextval
+		  , #{mailNo}
+		  , #{recipientNo}
+		  , #{recipientName}
+		  , #{recipientEmail}
+		  , #{recipientDeptName}
+		  , #{recipientPosName}
+		  , #{recType}
+		  , #{recStatus}
+		)
+  	</insert>
+  	
+  	<!-- 받은메일함, 스팸메일함, 내게쓴메일함 리스트 가져오기 -->
+	<select id="selectRecMailList" parameterType="PaginationInfoVO" resultType="MailRecipientVO">
+	    select
+	        b.*
+	    from (
+	        select
+	            a.*, row_number() over (order by a.mail_no) AS mail_row_no
+	        from (
+	            select
+	                mr.mail_no,
+	                mr.read_yn AS mailReadYn,
+	                mr.rec_fav_yn AS mailFavYn,
+	                me.mem_no,
+	                me.mem_name,
+	                me.mem_email,
+	                m.mail_title,
+	                m.mail_date,
+	                m.file_no,
+	                m.mail_security_yn,
+	                m.mail_imp,
+	                mr.rec_del_yn,
+	                mr.rec_no,
+	                mr.mail_gb
+	            from
+	                mail_recipient mr, member me, mail m
+	            where
+	                mr.recipient_no = #{memNo}
+	                <if test="keyword != 1 and keyword &lt; 13">
+	                    and mr.rec_status = '스팸'
+	                </if>
+	                <if test="keyword == 1 or keyword == 12">
+	                    and mr.rec_status = '수신됨'
+	                </if>
+	                <if test="keyword != 12 and keyword &lt; 13">
+	                    and mr.recipient_no != m.mem_no
+	                </if>
+	                <if test="keyword == 12">
+	                    and mr.recipient_no = m.mem_no
+	                </if>
+	                <if test="keyword &lt; 100">
+	                	and mr.mailbox_no is null
+	                </if>
+	                <if test="keyword &gt; 100">
+	                	and mr.mailbox_no = #{mailboxNo}
+	                </if>
+	                and m.mem_no = me.mem_no and mr.rec_del_yn = 'N'
+	                and mr.mail_no = m.mail_no
+	                <include refid="mailSearch"/>
+	        ) a
+	        order by a.mail_date DESC
+	    ) b
+	</select>
+	
+  	<!-- 보낸메일함, 임시메일함, 예약메일함 리스트 가져오기 -->
+  	<select id="selectSenderMailList" parameterType="PaginationInfoVO" resultType="MailRecipientVO">
+		select
+		    b.*
+		from ( 	
+		    select
+		        a.*, row_number() over (order by a.mail_no) mail_row_no
+		    from (     
+		        select
+		            m.mail_no
+		            , m.mail_read_yn
+		            , m.mail_fav_yn
+		            , me.mem_no
+		            , me.mem_name
+		            , me.mem_email
+		            , m.mail_title
+		            , m.mail_date
+		            , m.mail_res_date
+		            , m.file_no
+		            , m.mail_del_yn
+		            , m.mail_gb
+	                , m.mail_security_yn
+	                , m.mail_imp
+		        from
+		            mail m, member me
+		        where
+		            me.mem_no = ${memNo}
+		            <if test="keyword == 2 or keyword == 3">
+		            	and (m.mail_status = '전송' or m.mail_status = '전송실패')
+		            </if> 
+		            <if test="keyword == 4">
+		            	and m.mail_status = '임시'
+		            </if> 
+		            <if test="keyword == 5">
+		            	and m.mail_status = '예약'
+		            </if> 
+		            and m.mail_del_yn = 'N'
+		            and m.mem_no = me.mem_no
+		            <include refid="mailSearch"/>
+		        ) a
+		    order by a.mail_no desc
+		) b 	
+  	</select>
+  	
+  	<select id="getSendMailRowNo" parameterType="PaginationInfoVO" resultType="int">
+ 		select
+		    b.mail_row_no
+		from ( 	
+		    select
+		        a.*, row_number() over (order by a.mail_no) mail_row_no
+		    from (     
+		        select
+		            m.mail_no
+		            , m.mail_read_yn
+		            , m.mail_fav_yn
+		            , me.mem_no
+		            , me.mem_name
+		            , me.mem_email
+		            , m.mail_title
+		            , m.mail_date
+		            , m.file_no
+		            , m.mail_del_yn
+		            , m.mail_gb
+	                , m.mail_security_yn
+	                , m.mail_imp
+		        from
+		            mail m, member me
+		        where
+		            me.mem_no = #{memNo}
+		            	and (m.mail_status = '전송' or m.mail_status = '전송실패')
+		            and m.mail_del_yn = 'N'
+		            and m.mem_no = me.mem_no
+		            <include refid="mailSearch"/>
+		        ) a
+		    order by a.mail_no desc
+		) b
+  	</select>
+  	
+  	<!-- 휴지통, 중요메일함, 안읽은메일함, 읽은메일함, 첨부메일함 리스트 가져오기 -->
+  	<select id="selectUnifiedMailList" parameterType="PaginationInfoVO" resultType="MailRecipientVO">
+ 		select
+		    b.*
+		from ( 	
+		    select
+		        a.*, row_number() over (order by a.mail_no) mail_row_no
+		    from (     
+		        select
+		            m.mail_no
+		            , m.mail_read_yn
+		            , m.mail_fav_yn
+		            , me.mem_no
+		            , me.mem_name
+		            , me.mem_email
+		            , m.mail_title
+		            , m.mail_date
+		            , m.file_no
+		            , m.mail_del_yn
+		            , m.mail_gb
+		            , null as rec_no
+	                , m.mail_security_yn
+	                , m.mail_imp
+		        from
+		            mail m, member me
+		        where
+		            me.mem_no = #{memNo}
+		            <if test="keyword == 7">
+			            and m.mail_del_yn = 'Y'
+		            </if>
+		            <if test="keyword == 8">
+		            	and m.mail_fav_yn = 'Y' and m.mail_del_yn = 'N'
+		            </if>
+		            <if test="keyword == 9">
+		            	and m.mail_read_yn = 'N' and m.mail_del_yn = 'N'
+		            </if>
+		            <if test="keyword == 10">
+		            	and m.mail_read_yn = 'Y' and m.mail_del_yn = 'N'
+		            </if>
+		            <if test="keyword == 11">
+		            	and m.file_no != 0 and m.mail_del_yn = 'N'
+		            </if>	       		            
+		            and m.mem_no = me.mem_no
+		union
+		        select
+		            mr.mail_no
+		            , mr.read_yn mailReadYn
+		            , mr.rec_fav_yn mailFavYn
+		            , me.mem_no
+		            , me.mem_name
+		            , me.mem_email
+		            , m.mail_title
+		            , m.mail_date
+		            , m.file_no
+		            , mr.rec_del_yn mailDelYn
+		            , mr.mail_gb
+		            , mr.rec_no
+	                , m.mail_security_yn
+	                , m.mail_imp
+		        from
+		            mail_recipient mr, member me, mail m
+		        where
+		            mr.recipient_no = #{memNo}
+		            <if test="keyword == 7">
+			            and mr.rec_del_yn = 'Y'
+		            </if> 
+		            <if test="keyword == 8">
+		            	and mr.rec_fav_yn = 'Y' and mr.rec_del_yn = 'N'
+		            </if>
+		            <if test="keyword == 9">
+		            	and mr.read_yn = 'N' and mr.rec_del_yn = 'N'
+		            </if>
+		            <if test="keyword == 10">
+		            	and mr.read_yn = 'Y' and mr.rec_del_yn = 'N'
+		            </if>
+		            <if test="keyword == 11">
+		            	and m.file_no != 0 and mr.rec_del_yn = 'N'
+		            </if>	
+		            and m.mem_no = me.mem_no and mr.mail_no = m.mail_no
+		            <include refid="mailSearch"/>
+		        ) a
+		    order by a.mail_no desc
+		) b 	
+  	</select>
+  	
+  	<select id="getConfirmationMailList" parameterType="PaginationInfoVO" resultMap="MailMap">
+		select
+		    b.*
+		from ( 	
+		    select
+		        a.*, row_number() over (order by a.mail_no) mail_row_no
+		    from (  
+				select
+				    m.mail_no
+				    , m.mem_no
+				    , m.mail_date
+				    , m.mail_status
+				    , m.mail_title
+				    , mr.recipient_no
+				    , mr.recipient_name
+				    , mr.recipient_email
+				    , mr.recipient_dept_name
+				    , mr.recipient_pos_name
+				    , mr.rec_status
+				    , mr.rec_time
+				    , mr.read_yn
+				    , me.mem_name
+	                , m.mail_security_yn
+	                , m.mail_imp
+				from 
+				    mail m, mail_recipient mr, member me
+				where
+				    m.mem_no = #{memNo} and (m.mail_status = '전송' or m.mail_status = '전송실패') and m.con_del_yn = 'N'
+				    and m.mail_no = mr.mail_no and mr.recipient_no = me.mem_no
+				    <include refid="mailSearch"/>
+		        ) a
+		    order by a.mail_no desc
+		) b 
+  	</select>
+  	
+  	<!-- 받은메일함, 스팸메일함, 내게쓴메일함 detail 가져오기 -->
+  	<select id="getRecMailInfo" parameterType="MailRecipientVO" resultType="MailRecipientVO">
+	    select
+	        b.*
+	    from (
+	        select
+	            a.*, row_number() over (order by a.mail_no) AS mail_row_no
+	        from (
+	            select
+	                mr.mail_no,
+	                mr.read_yn AS mailReadYn,
+	                mr.rec_fav_yn AS mailFavYn,
+	                me.mem_no,
+	                me.mem_name,
+	                me.mem_email,
+	                m.mail_title,
+	                m.mail_date,
+	                m.file_no,
+	                mr.rec_del_yn mailDelYn,
+	                mr.mail_gb,
+	                mr.rec_no,
+	                m.mail_security_yn,
+	                m.mail_imp
+	            from
+	                mail_recipient mr, member me, mail m
+	            where
+	                mr.recipient_no = #{memNo}
+	                <if test="keyword != 1 and keyword &lt; 13">
+	                    and mr.rec_status = '스팸'
+	                </if>
+	                <if test="keyword == 1 or keyword == 12">
+	                    and mr.rec_status = '수신됨'
+	                </if>
+	                <if test="keyword != 12 and keyword &lt; 13">
+	                    and mr.recipient_no != m.mem_no
+	                </if>
+	                <if test="keyword == 12">
+	                    and mr.recipient_no = m.mem_no
+	                </if>
+	                <if test="keyword &lt; 100">
+	                	and mr.mailbox_no is null
+	                </if>
+	                <if test="keyword &gt; 100">
+	                	and mr.mailbox_no = #{mailboxNo}
+	                </if>
+	                and m.mem_no = me.mem_no and mr.rec_del_yn = 'N'
+	                and mr.mail_no = m.mail_no
+	        ) a
+	        order by a.mail_no DESC
+	    ) b
+		where b.mail_row_no = #{mailRowNo}
+  	</select>
+  	
+  	<!-- 보낸메일함, 임시메일함, 예약메일함 detail 가져오기 -->
+ 	<select id="getSenderMailInfo" parameterType="MailRecipientVO" resultType="MailRecipientVO">
+		select
+		    b.*
+		from ( 	
+		    select
+		        a.*, row_number() over (order by a.mail_no) mail_row_no
+		    from (     
+		        select
+		            m.mail_no
+		            , m.mail_read_yn
+		            , m.mail_fav_yn
+		            , me.mem_no
+		            , me.mem_name
+		            , me.mem_email
+		            , m.mail_title
+		            , m.mail_date
+		            , m.mail_res_date
+		            , m.file_no
+		            , m.mail_del_yn
+		            , m.mail_gb
+	                , m.mail_security_yn
+	                , m.mail_imp
+		        from
+		            mail m, member me
+		        where
+		            me.mem_no = ${memNo}
+		            <if test="keyword == 2 or keyword == 3">
+		            	and (m.mail_status = '전송' or m.mail_status = '전송실패')
+		            </if> 
+		            <if test="keyword == 4">
+		            	and m.mail_status = '임시'
+		            </if> 
+		            <if test="keyword == 5">
+		            	and m.mail_status = '예약'
+		            </if> 
+		            and m.mem_no = me.mem_no and m.mail_del_yn = 'N'
+		        ) a
+		    order by a.mail_no desc
+		) b  	
+		where b.mail_row_no = #{mailRowNo}
+ 	</select>
+  	
+  	<!-- 휴지통, 중요메일함, 안읽은메일함, 읽은메일함, 첨부메일함 detail 가져오기 -->
+ 	<select id="getUnifiedMailInfo" parameterType="MailRecipientVO" resultType="MailRecipientVO">
+		select
+		    b.*
+		from ( 	
+		    select
+		        a.*, row_number() over (order by a.mail_no) mail_row_no
+		    from (     
+		        select
+		            m.mail_no
+		            , m.mail_read_yn
+		            , m.mail_fav_yn
+		            , me.mem_no
+		            , me.mem_name
+		            , me.mem_email
+		            , m.mail_title
+		            , m.mail_date
+		            , m.file_no
+		            , m.mail_del_yn
+		            , m.mail_gb
+		            , null rec_no
+	                , m.mail_security_yn
+	                , m.mail_imp
+		        from
+		            mail m, member me
+		        where
+		            me.mem_no = #{memNo}
+		            <if test="keyword == 7">
+			            and m.mail_del_yn = 'Y'
+		            </if>
+		            <if test="keyword == 8">
+		            	and m.mail_fav_yn = 'Y' and m.mail_del_yn = 'N'
+		            </if>
+		            <if test="keyword == 9">
+		            	and m.mail_read_yn = 'N' and m.mail_del_yn = 'N'
+		            </if>
+		            <if test="keyword == 10">
+		            	and m.mail_read_yn = 'Y' and m.mail_del_yn = 'N'
+		            </if>
+		            <if test="keyword == 11">
+		            	and m.file_no != 0 and m.mail_del_yn = 'N'
+		            </if>	       		            
+		            and m.mem_no = me.mem_no
+		union
+		        select
+		            mr.mail_no
+		            , mr.read_yn mailReadYn
+		            , mr.rec_fav_yn mailFavYn
+		            , me.mem_no
+		            , me.mem_name
+		            , me.mem_email
+		            , m.mail_title
+		            , m.mail_date
+		            , m.file_no
+		            , mr.rec_del_yn mailDelYn
+		            , mr.mail_gb
+		            , mr.rec_no
+	                , m.mail_security_yn
+	                , m.mail_imp
+		        from
+		            mail_recipient mr, member me, mail m
+		        where
+		            mr.recipient_no = #{memNo}
+		            <if test="keyword == 7">
+			            and mr.rec_del_yn = 'Y'
+		            </if> 
+		            <if test="keyword == 8">
+		            	and mr.rec_fav_yn = 'Y' and mr.rec_del_yn = 'N'
+		            </if>
+		            <if test="keyword == 9">
+		            	and mr.read_yn = 'N' and mr.rec_del_yn = 'N'
+		            </if>
+		            <if test="keyword == 10">
+		            	and mr.read_yn = 'Y' and mr.rec_del_yn = 'N'
+		            </if>
+		            <if test="keyword == 11">
+		            	and m.file_no != 0 and mr.rec_del_yn = 'N'
+		            </if>	
+		            and m.mem_no = me.mem_no and mr.mail_no = m.mail_no
+		        ) a
+		    order by a.mail_no desc
+		) b  
+		where b.mail_row_no = #{mailRowNo}	
+ 	</select>
+  	
+  	<!-- 받은메일함 안읽은 숫자 체크 -->
+  	<select id="getInboxUnreadCnt" resultType="int">
+	    select 
+	    	count(*)
+	    from (
+	        select
+	            a.*, row_number() over (order by a.mail_no) as mail_row_no
+	        from (
+	            select
+	                mr.mail_no,
+	                mr.read_yn AS mailReadYn,
+	                mr.rec_fav_yn AS mailFavYn,
+	                me.mem_no,
+	                me.mem_name,
+	                me.mem_email,
+	                m.mail_title,
+	                m.mail_date,
+	                m.file_no,
+	                mr.rec_del_yn mailDelYn
+	            from
+	                mail_recipient mr, member me, mail m
+	            where
+	                mr.recipient_no = #{memNo}
+                    and mr.rec_status = '수신됨' and m.mem_no != mr.recipient_no and mr.rec_del_yn = 'N'
+	                and m.mem_no = me.mem_no and mr.mail_no = m.mail_no
+	        ) a
+	        order by a.mail_no desc
+	    ) b
+	    where b.mailReadYn = 'N'
+  	</select>
+  	
+  	<!-- 보낸메일함 안읽은 숫자 체크 -->
+  	<select id="getSentUnreadCnt" resultType="int">
+		select 
+			count(*)
+		from ( 	
+		    select
+		        a.*, row_number() over (order by a.mail_no) mail_row_no
+		    from (     
+		        select
+		            m.mail_no
+		            , m.mail_read_yn
+		            , m.mail_fav_yn
+		            , me.mem_no
+		            , me.mem_name
+		            , me.mem_email
+		            , m.mail_title
+		            , m.mail_date
+		            , m.file_no
+		            , m.mail_del_yn
+		        from
+		            mail m, member me
+		        where
+		            me.mem_no = ${memNo}
+	            	and (m.mail_status = '전송' or m.mail_status = '전송실패') and m.mail_del_yn = 'N'
+		            and m.mem_no = me.mem_no
+		        ) a
+		    order by a.mail_no desc
+		) b  	
+		where b.mail_read_yn = 'N'
+  	</select>
+  	
+  	<!-- 임시메일함 안읽은 숫자 체크 -->
+  	<select id="getTempUnreadCnt" resultType="int">
+		select 
+			count(*)
+		from ( 	
+		    select
+		        a.*, row_number() over (order by a.mail_no) mail_row_no
+		    from (     
+		        select
+		            m.mail_no
+		            , m.mail_read_yn
+		            , m.mail_fav_yn
+		            , me.mem_no
+		            , me.mem_name
+		            , me.mem_email
+		            , m.mail_title
+		            , m.mail_date
+		            , m.file_no
+		            , m.mail_del_yn
+		        from
+		            mail m, member me
+		        where
+		            me.mem_no = ${memNo}
+	            	and m.mail_status = '임시' and m.mail_del_yn = 'N'
+		            and m.mem_no = me.mem_no
+		        ) a
+		    order by a.mail_no desc
+		) b  	
+		where b.mail_read_yn = 'N'
+  	</select>
+  	
+  	<!-- 예약메일함 안읽은 숫자 체크 -->
+  	<select id="getResUnreadCnt" resultType="int">
+ 		select 
+ 			count(*)
+		from ( 	
+		    select
+		        a.*, row_number() over (order by a.mail_no) mail_row_no
+		    from (     
+		        select
+		            m.mail_no
+		            , m.mail_read_yn
+		            , m.mail_fav_yn
+		            , me.mem_no
+		            , me.mem_name
+		            , me.mem_email
+		            , m.mail_title
+		            , m.mail_date
+		            , m.file_no
+		            , m.mail_del_yn
+		        from
+		            mail m, member me
+		        where
+		            me.mem_no = ${memNo}
+	            	and m.mail_status = '예약' and m.mail_del_yn = 'N'
+		            and m.mem_no = me.mem_no
+		        ) a
+		    order by a.mail_no desc
+		) b  	
+		where b.mail_read_yn = 'N'
+  	</select>
+  	
+  	<!-- 스팸메일함 안읽은 숫자 체크 -->
+  	<select id="getSpamUnreadCnt" resultType="int">
+	    select 
+	    	count(*)
+	    from (
+	        select
+	            a.*, row_number() over (order by a.mail_no) AS mail_row_no
+	        from (
+	            select
+	                mr.mail_no,
+	                mr.read_yn AS mailReadYn,
+	                mr.rec_fav_yn AS mailFavYn,
+	                me.mem_no,
+	                me.mem_name,
+	                me.mem_email,
+	                m.mail_title,
+	                m.mail_date,
+	                m.file_no,
+	                mr.rec_del_yn mailDelYn
+	            from
+	                mail_recipient mr, member me, mail m
+	            where
+	                mr.recipient_no = #{memNo}
+                    and mr.rec_status = '스팸' and mr.recipient_no != m.mem_no and mr.rec_del_yn = 'N'
+	                and m.mem_no = me.mem_no and mr.mail_no = m.mail_no
+	        ) a
+	        order by a.mail_no DESC
+	    ) b
+	    where b.mailReadYn = 'N'
+  	</select>
+  	
+  	<!-- 휴지통 안읽은 숫자 체크 -->
+  	<select id="getTrashUnreadCnt" resultType="int">
+		select
+		    count(*)
+		from ( 	
+		    select
+		        a.*, row_number() over (order by a.mail_no) mail_row_no
+		    from (     
+		        select
+		            m.mail_no
+		            , m.mail_read_yn mailReadYn
+		            , m.mail_fav_yn mailFavYn
+		            , me.mem_no
+		            , me.mem_name
+		            , me.mem_email
+		            , m.mail_title
+		            , m.mail_date
+		            , m.file_no
+		            , m.mail_del_yn
+		        from
+		            mail m, member me
+		        where
+		            me.mem_no = 4 and m.mail_del_yn = 'Y'
+		            and m.mem_no = me.mem_no
+		union
+		        select
+		            mr.mail_no
+		            , mr.read_yn mailReadYn
+		            , mr.rec_fav_yn mailFavYn
+		            , me.mem_no
+		            , me.mem_name
+		            , me.mem_email
+		            , m.mail_title
+		            , m.mail_date
+		            , m.file_no
+		            , mr.rec_del_yn mailDelYn
+		        from
+		            mail_recipient mr, member me, mail m
+		        where
+		            mr.recipient_no = 4 and mr.rec_del_yn = 'Y'
+		            and m.mem_no = me.mem_no and mr.mail_no = m.mail_no
+		        ) a
+		    order by a.mail_no desc
+		) b
+		where b.mailReadYn = 'N'
+  	</select>
+  	
+  	<!-- 태크 리스트 추가 -->
+  	<insert id="addTagList" parameterType="MailTagVO">
+  		insert into mail_tag(
+  			 mail_tag_no
+  			, mem_no
+  			, mail_tag_name
+  			, mail_tag_color
+  		) values (
+  			 seq_mail_tag.nextval
+  			, #{memNo}
+  			, #{mailTagName}
+  			, #{mailTagColor}
+  		)
+  	</insert>
+  	
+  	<!-- 태그 리스트 가져오기 -->
+  	<select id="getTagList" parameterType="MemberVO" resultType="MailTagVO">
+  		select
+  			mail_tag_no
+  			, mail_tag_name
+  			, mail_tag_color
+  			, mem_no
+  		from 
+  			mail_tag
+  		where
+  			mem_no = #{memNo}
+  	</select>
+  	
+  	<!-- 추가한 태그 가져오기 -->
+  	<select id="getLastMailTag" resultType="MailTagVO">
+	  	select B.*
+	  	from
+	  		(
+	  		select A.*, row_number() over (order by A.mail_tag_no desc) rnum
+		  	from
+		  		(select
+		  			mail_tag_no
+		  			, mail_tag_name
+		  			, mail_tag_color
+		  			, mem_no
+		  			, rownum rn
+		  		from 
+		  			mail_tag
+		  		where
+		  			mem_no = #{memNo}
+				order by
+					mail_tag_no desc
+				) A 
+			)B
+		where B.rnum = 1
+  	</select>
+  	
+  	<!-- 태그 리스트 수정 -->
+  	<update id="modifyTagList" parameterType="MailTagVO">
+		update mail_tag
+		set
+		    mail_tag_name = #{mailTagName},
+		    mail_tag_color = #{mailTagColor}
+		where
+		    mail_tag_no = #{mailTagNo}
+  	</update>
+  	
+  	<!-- 태그 리스트 삭제 -->
+  	<delete id="deleteTagList" parameterType="MailTagVO">
+	  	delete from mail_tag
+		where
+	        mail_tag_no = #{mailTagNo}
+  	</delete>
+  	
+  	<!-- 메일에 태그 등록 -->
+  	<insert id="applyTag">
+  		insert into recipient_tag(
+  			rec_no
+  			, mail_tag_no
+  		) values (
+  			#{recNo}
+  			,#{mailTagNo}
+  		)
+  	</insert>
+  	
+  	<!-- 메일에 태그 등록 해제 -->
+  	<delete id="unApplyTag">
+  		delete from recipient_tag
+  		where
+  			rec_no = #{recNo} and mail_tag_no = #{mailTagNo}
+  	</delete>
+  	
+  	<select id="getTag" parameterType="MemberVO" resultType="MailTagVO">
+        select
+               mr.rec_no
+               , mt.mail_tag_no
+               , mt.mail_tag_name
+               , mt.mail_tag_color
+        from
+            mail_recipient mr, member me, mail m, recipient_tag rt, mail_tag mt
+        where
+            mr.recipient_no = ${memNo}
+               and mr.rec_status = '수신됨'
+               and mr.recipient_no != m.mem_no and mr.rec_del_yn = 'N'
+            and m.mem_no = me.mem_no and mr.mail_no = m.mail_no and mr.rec_no = rt.rec_no and rt.mail_tag_no = mt.mail_tag_no  		
+  	</select>
+  	
+  	<select id="tagCheck" parameterType="int" resultType="int">
+  		select
+  			mail_tag_no
+  		from
+  			recipient_tag
+  		where
+  			rec_no = #{chechedRecNo}
+  	</select>
+  	
+  	<!-- 차단 리스트에 추가 -->
+  	<insert id="addBlockList" parameterType="MailBlockListVO">
+  		insert into blocklist(
+  			bl_no
+  			, mem_no
+  			, blocked_mem_no
+  		) values (
+  			seq_blocklist.nextval
+  			, #{memNo}
+  			, #{blockedMemNo}
+  		)
+  	</insert>
+  	
+  	<!-- 차단 리스트에서 삭제 -->
+  	<delete id="unBlockList" parameterType="MailBlockListVO">
+ 		delete from blocklist
+ 		where
+ 			mem_no = #{memNo} and blocked_mem_no = #{blockedMemNo}
+  	</delete>
+  	
+  	<!-- 메일 정보 가져오기 -->
+  	<select id="getMailByNo" parameterType="int" resultType="MailVO">
+		select
+		    m.mail_no
+		  , m.mem_no
+		  , m.mail_title
+		  , m.mail_content
+		  , m.mail_date
+		  , m.file_no
+		  , m.mail_status
+		  , m.mail_res
+		  , m.mail_imp
+		  , m.mail_res_date
+		  , m.mail_imp
+		  , m.mail_security_yn
+		  , me.mem_name
+		  , me.mem_email
+		  , p.pos_name
+		  , d.dept_name
+		from 
+			mail m, member me, position p, department d
+		where
+			m.mail_no = #{mailNo} and m.mem_no = me.mem_no and me.pos_no = p.pos_no and me.dept_no = d.dept_no 
+  	</select>
+  	
+  	<!-- 메일 수신자 정보 가져오기 -->
+  	<select id="getMailRecipientInfoByMailNo" parameterType="MailRecipientVO" resultType="MailRecipientVO">
+  		select
+		    mr.rec_no
+		  , mr.mail_no
+		  , mr.recipient_no
+		  , mr.mailbox_no
+		  , mr.recipient_name
+		  , mr.recipient_email
+		  , mr.recipient_dept_name
+		  , mr.recipient_pos_name
+		  , mr.rec_type
+		  , mr.rec_status
+		  , mr.rec_time
+		  , mr.read_yn
+		  , mr.rec_fav_yn
+		  , m.mem_no
+		  , m.mail_title
+		  , m.mail_content
+		  , m.mail_date
+		  , m.file_no
+		  , m.mail_imp
+  		from mail_recipient mr, mail m
+  		where 1=1 and m.mail_no = #{mailNo}
+	   		and m.mail_no = mr.mail_no
+  	</select>
+  	
+  	<!-- 차단리스트 중복 체크 -->
+  	<select id="checkBlock" parameterType="MailBlockListVO" resultType="int">
+  		select
+  			count(*)
+  		from
+  			blocklist
+  		where
+  			mem_no = #{memNo} and
+  			blocked_mem_no = #{blockedMemNo}
+  	</select>
+  	
+  	<!-- 발신자 입장 삭제 -->
+  	<update id="senderAddTrash" parameterType="MailRecipientVO">
+  		update
+  			mail
+  		set
+  			mail_del_yn = 'Y'
+  		where
+  			mail_no = #{mailNo} and mem_no = #{recipientNo}
+  	</update>
+  	
+  	<!-- 수신자 입장 삭제 -->
+  	<update id="recAddTrash" parameterType="MailRecipientVO">
+  		update
+  			mail_recipient
+  		set
+  			rec_del_yn = 'Y'
+  		where
+  			mail_no = #{mailNo} and recipient_no = #{recipientNo}
+  	</update>
+  	
+  	<!-- 발신자 입장 삭제 -->
+  	<update id="senderUnTrash" parameterType="MailRecipientVO">
+  		update
+  			mail
+  		set
+  			mail_del_yn = 'N'
+  		where
+  			mail_no = #{mailNo} and mem_no = #{recipientNo}
+  	</update>
+  	
+  	<!-- 수신자 입장 삭제 -->
+  	<update id="recUnTrash" parameterType="MailRecipientVO">
+  		update
+  			mail_recipient
+  		set
+  			rec_del_yn = 'N'
+  		where
+  			mail_no = #{mailNo} and recipient_no = #{recipientNo}
+  	</update>
+  	
+  	<!-- 발신자 입장 즐겨찾기 변경 -->
+  	<update id="changeSenderFav" parameterType="MailRecipientVO">
+  		update
+  			mail
+  		set
+  			mail_fav_yn = #{recFavYn}
+  		where
+  			mail_no = #{mailNo} and mem_no = #{recipientNo}
+  	</update>
+  	
+  	<!-- 수신자 입장 즐겨찾기 변경 -->
+  	<update id="changeRecipientFav" parameterType="MailRecipientVO">
+  		update
+  			mail_recipient
+  		set
+  			rec_fav_yn = #{recFavYn}
+  		where
+  			mail_no = #{mailNo} and recipient_no = #{recipientNo}
+  	</update>
+  	
+  	<!-- 자동완성 기능 -->
+  	<select id="searchMembers" parameterType="String" resultType="MemberVO">
+		select
+		    mem_name, mem_email, pos_name, dept_name
+		from
+		    member m, position p, department d
+		where 
+		    (FN_GET_DIV_KO_CHAR(mem_name) like '%' || FN_GET_DIV_KO_CHAR(#{searchWord}) || '%'
+		    or FN_GET_DIV_KO_CHAR(mem_email) like '%' || FN_GET_DIV_KO_CHAR(#{searchWord}) || '%'
+		    or FN_GET_DIV_KO_CHAR(pos_name) like '%' || FN_GET_DIV_KO_CHAR(#{searchWord}) || '%'
+		    or FN_GET_DIV_KO_CHAR(dept_name) like '%' || FN_GET_DIV_KO_CHAR(#{searchWord}) || '%')
+		    and m.pos_no = p.pos_no and m.dept_no = d.dept_no  	
+  	</select>
+  	
+  	<!-- 최근 주소 리스트 -->
+		<select id="getRecentMailList" parameterType="int" resultType="MailRecipientVO">
+		    <![CDATA[
+		        select distinct
+		            b.*
+		        from (     
+		            select
+		                a.*, row_number() over (order by a.mail_no) as mail_row_no
+		            from (  
+		                select
+		                    me.mem_email, me.mem_name, d.dept_name, p.pos_name, m.mail_no
+		                from 
+		                    mail_recipient mr
+		                    join mail m on m.mail_no = mr.mail_no
+		                    join member me on mr.recipient_no = me.mem_no
+		                    join department d on me.dept_no = d.dept_no
+		                    join position p on me.pos_no = p.pos_no
+		                where
+		                    m.mem_no = #{memNo} 
+		                    and m.mem_no != mr.recipient_no
+		            ) a
+		            order by a.mail_no desc
+		        ) b
+		        where b.mail_row_no <= 20
+		    ]]>
+		</select>
+  	<!-- 발신자 입장 detail 파일 삭제 -->
+  	<update id="deleteMemFileDetail" parameterType="int">
+  		update
+  			file_detail
+  		set
+  			del_yn = 'Y'
+  		where
+  			file_detail_no = #{fileNo}
+  	</update>
+  	
+  	
+  	<!-- 수신자 입장 detail 파일 삭제 -->
+  	<update id="deleteRecipientFileDetail" parameterType="int">
+  		update
+  			file_detail
+  		set
+  			rec_del_yn = 'Y'
+  		where
+  			file_detail_no = #{fileNo}
+  	</update>
+  	
+  	<!-- 발신자 입장 파일 전체 삭제 -->
+  	<update id="deleteMemFile" parameterType="int">
+  		update
+  			file_detail
+  		set
+  			del_yn = 'Y'
+  		where
+  			file_no = #{fileNo}
+  	</update>
+  	
+  	<!-- 수신자 입장 파일 전체 삭제 -->
+  	<update id="deleteRecipientFile" parameterType="int">
+  		update
+  			file_detail
+  		set
+  			rec_del_yn = 'Y'
+  		where
+  			file_no = #{fileNo}
+  	</update>
+  	
+  	<!-- 파일 전체 정보 가져오기 -->
+  	<select id="getFileDetailList" parameterType="int" resultType="FilesDetailVO">
+		select
+		    file_no
+		  , file_detail_no
+		  , file_path
+		  , file_size
+		  , file_mime
+		  , file_originalname
+		  , file_uploadname
+		  , reg_date
+		  , mem_no
+		  , del_yn
+		  , rec_del_yn
+		  , download_cnt
+		from
+		    file_detail
+		where
+		    file_no=#{fileNo}
+	</select>
+	
+  	<select id="getFileDetailListByDetailNo" parameterType="int" resultType="FilesDetailVO">
+		select
+		    file_no
+		  , file_detail_no
+		  , file_path
+		  , file_size
+		  , file_mime
+		  , file_originalname
+		  , file_uploadname
+		  , reg_date
+		  , mem_no
+		  , del_yn
+		  , rec_del_yn
+		  , download_cnt
+		from
+		    file_detail
+		where
+		    file_detail_no=#{fileDetailNo}
+	</select>	
+	
+	<!-- 발신자 입장 완전삭제 -->
+	<delete id="senderCompletelyDelete" parameterType="MailRecipientVO">
+  		delete
+  		from
+  			mail
+  		where
+  			mail_no = #{mailNo} and mem_no = #{recipientNo}
+	</delete>
+	
+	<!-- 수신자 입장 완전삭제 -->
+	<delete id="recCompletelyDelete" parameterType="MailRecipientVO">
+	  	delete
+	  	from
+  			mail_recipient
+  		where
+  			mail_no = #{mailNo} and recipient_no = #{recipientNo}
+	</delete>
+	
+	<update id="readSenderMail" parameterType="MailRecipientVO">
+		update
+			mail
+		set
+			mail_read_yn = 'Y'
+		where
+			mail_no = #{mailNo} and mem_no = #{recipientNo}
+	</update>
+	
+	<update id="readRecMail" parameterType="MailRecipientVO">
+		update
+			mail_recipient
+		set
+			read_yn = 'Y'
+			, rec_time = sysdate
+		where
+			mail_no = #{mailNo} and recipient_no = #{recipientNo}
+	</update>
+	
+	<update id="unreadSenderMail" parameterType="MailRecipientVO">
+		update
+			mail
+		set
+			mail_read_yn = 'N'
+		where
+			mail_no = #{mailNo} and mem_no = #{recipientNo}
+	</update>
+	
+	<update id="unreadRecMail" parameterType="MailRecipientVO">
+		update
+			mail_recipient
+		set
+			read_yn = 'N'
+		where
+			mail_no = #{mailNo} and recipient_no = #{recipientNo}
+	</update>
+	
+	<insert id="addMailBox" parameterType="MailBoxVO">
+		insert into mailbox(
+			mailbox_no
+			, mem_no
+			, mailbox_name
+		) values (
+			seq_mailbox.nextval
+			, #{memNo}
+			, #{mailboxName}
+		)
+	</insert>
+	
+	<select id="getLastMailBox" parameterType="MemberVO" resultType="MailBoxVO">
+		select
+			b.*
+		from (
+			select
+				 a.*, row_number() over (order by a.mailbox_no desc) mail_row_no
+			from (
+				select
+					mailbox_no
+					, mem_no
+					, mailbox_name
+				from
+					mailbox
+				where mem_no = #{memNo}
+			) a
+			order by a.mailbox_no desc
+		) b
+		where b.mail_row_no = 1
+	</select>
+	
+	<select id="getMailBoxList" parameterType="MemberVO" resultType="MailBoxVO">
+		select
+			b.*
+		from (
+			select
+				 a.*, row_number() over (order by a.mailbox_no) mailbox_row_no
+			from (
+				select
+					mailbox_no
+					, mem_no
+					, mailbox_name
+				from
+					mailbox
+				where mem_no = #{memNo}
+			) a
+			order by a.mailbox_no
+		) b
+	</select>
+	
+	<select id="getMailBoxNo" parameterType="PaginationInfoVO" resultType="MailBoxVO">
+		select
+			b.*
+		from (
+			select
+				 a.*, row_number() over (order by a.mailbox_no) mailbox_row_no
+			from (
+				select
+					mailbox_no
+					, mem_no
+					, mailbox_name
+				from
+					mailbox
+				where mem_no = #{memNo}
+			) a
+			order by a.mailbox_no
+		) b
+        where
+            b.mailbox_row_no = #{keyword}
+	</select>
+	
+	<select id="getMailBoxNoByRec" parameterType="MailRecipientVO" resultType="MailBoxVO">
+		select
+			b.*
+		from (
+			select
+				 a.*, row_number() over (order by a.mailbox_no) mailbox_row_no
+			from (
+				select
+					mailbox_no
+					, mem_no
+					, mailbox_name
+				from
+					mailbox
+				where mem_no = #{memNo}
+			) a
+			order by a.mailbox_no
+		) b
+        where
+            b.mailbox_row_no = #{keyword}
+	</select>
+	
+	<delete id="deleteConfirmationMail" parameterType="int">
+		update
+			mail
+		set
+			con_del_yn = 'Y'
+		where
+			mail_no = #{mailNo}
+	</delete>
+	
+	<update id="cancleSend" parameterType="int">
+		update
+			mail_recipient
+		set
+			rec_status = '전송취소'
+		where
+			rec_no = #{recNo}
+	</update>
+	
+	<update id="moveMail" parameterType="MailBoxVO">
+		update
+			mail_recipient
+		set
+			mailbox_no = #{mailboxNo},
+			rec_del_yn = 'N'
+		where
+			rec_no = #{memNo}
+	</update>
+	
+	<update id="moveInbox" parameterType="int">
+		update
+			mail_recipient
+		set
+			mailbox_no = null,
+			rec_del_yn = 'N'
+		where
+			rec_no = #{recNo}
+	</update>
+	
+	<update id="emptyMailBox" parameterType="int">
+		update
+			mail_recipient
+		set
+			rec_del_yn = 'Y'
+		where
+			mailbox_no = #{emptyMailBoxNo}
+	</update>
+	
+	<update id="modifyMailBox" parameterType="MailBoxVO">
+		update
+			mailbox
+		set
+			mailbox_name = #{mailboxName}
+		where
+			mailbox_no = #{mailboxNo}
+	</update>
+	
+	<delete id="deleteMailBox" parameterType="int">
+		delete 
+		from 
+			mailbox
+		where
+			mailbox_no = #{deleteMailBoxNo}
+	</delete>
+	
+	<update id="blockMail" parameterType="RecipientTagVO">
+		update
+			mail_recipient
+		set
+			rec_status = '스팸'
+		where
+			rec_no = #{recNo}
+	</update>
+	
+	<insert id="addBlockWord" parameterType="MailBlockWordVO">
+		insert into block_word(
+			bw_no
+			, mem_no
+			, block_word
+		)values(
+			seq_block_word.nextval
+			, #{memNo}
+			, #{blockWord}
+		)
+	</insert>
+	
+	<select id="getLastBlockWord" parameterType="MailBlockWordVO" resultType="MailBlockWordVO">
+		select
+		    b.*
+		from (
+		    select
+		        a.*, row_number() over (order by a.bw_no desc) bw_row_no
+		    from (
+		        select
+		            bw_no
+		            , mem_no
+		            , block_word
+		        from
+		            block_word
+		        where
+		            mem_no = #{memNo}
+		        )a
+		    order by a.bw_no desc
+		    )b
+		where b.bw_row_no = 1
+	</select>
+	
+	<delete id="deleteAllBlockWord" parameterType="MemberVO">
+		delete from block_word
+		where mem_no = #{memNo}
+	</delete>
+	
+	<delete id="deleteBlockWord" parameterType="int">
+		delete from block_word
+		where bw_no = ${deleteNo}
+	</delete>
+	
+	<select id="getBlockWordList" parameterType="MemberVO" resultType="MailBlockWordVO">
+		select
+			bw_no
+			, mem_no
+			, block_word
+		from
+			block_word
+		where
+			mem_no = #{memNo}
+	</select>
+	
+	<select id="getLastBlockList" parameterType="MailBlockListVO" resultType="MailBlockListVO">
+		select
+		    b.*
+		from (
+		    select
+		        a.*, row_number() over (order by a.bl_no desc) bl_row_no
+		    from (
+		        select
+		            bl.bl_no
+		            , bl.mem_no
+		            , bl.blocked_mem_no
+		            , me.mem_email blocked_mem_email
+		        from
+		            blocklist bl, member me
+		        where
+		            bl.mem_no = #{memNo}
+		            and bl.blocked_mem_no = me.mem_no
+		        )a
+		    order by a.bl_no desc
+		    )b
+		where b.bl_row_no = 1
+	</select>
+	
+	<delete id="deleteAllBlockList" parameterType="MemberVO">
+		delete from blocklist
+		where mem_no = #{memNo}
+	</delete>
+	
+	<delete id="deleteBlockList" parameterType="int">
+		delete from blocklist
+		where bl_no = ${deleteNo}
+	</delete>
+	
+	<select id="getBlockList" parameterType="MemberVO" resultType="MailBlockListVO">
+		select
+			bl.bl_no
+			, bl.mem_no
+			, bl.blocked_mem_no
+			, me.mem_email blocked_mem_email
+		from
+			blocklist bl, member me
+		where
+			bl.mem_no = #{memNo}
+			and bl.blocked_mem_no = me.mem_no
+	</select>
+	
+	<select id="checkUsedOutOfOffice" parameterType="MemberVO" resultType="MailOutOfOfficeVO">
+		select
+			mem_no
+			, auto_title
+			, auto_content
+			, auto_use_yn
+		from 
+			out_of_office
+		where
+			mem_no = #{memNo}
+	</select>
+	
+	<insert id="insertOutOfOffice" parameterType="MailOutOfOfficeVO">
+		insert into out_of_office (
+			mem_no
+			, auto_title
+			, auto_content
+			, auto_use_yn
+		) values (
+			#{memNo}
+			, #{autoTitle}
+			, #{autoContent}
+			, #{autoUseYn}
+		)
+	</insert>
+	
+	<update id="updateOutOfOffice" parameterType="MailOutOfOfficeVO">
+		update
+			out_of_office
+		set
+			auto_title = #{autoTitle}
+			, auto_content = #{autoContent}
+			, auto_use_yn = #{autoUseYn}
+		where
+			mem_no = #{memNo}
+	</update>
+	
+	<select id="getReservationMailList" resultType="MailVO">
+		select
+			mail_no
+			, mail_res_date
+			, mail_status
+			, mail_title
+			, mail_content
+			, mem_no
+		from 
+			mail
+		where
+			mail_status = '예약' and mail_del_yn = 'N' and mail_res_date = to_date(#{formatedNow}, 'yyyy-MM-dd HH24:MI:SS')
+	</select>
+	
+	<select id="getReservationRecMailList" parameterType="MailVO" resultType="MailRecipientVO">
+		select
+			rec_no
+			,recipient_no
+		from 
+			mail_recipient
+		where
+			mail_no = #{mailNo}
+	</select>
+	
+	<update id="updateReservationMail" parameterType="MailVO">
+		update
+			mail
+		set
+			mail_status = '전송'
+			, mail_date = sysdate
+		where
+			mail_no = #{mailNo}
+	</update>
+	
+	<update id="updateReservationResMail" parameterType="MailVO">
+		update
+			mail_recipient
+		set
+			rec_status = '수신됨'
+		where
+			mail_no = #{mailNo}
+	</update>
+	
+	<select id="getMailCapacity" parameterType="MemberVO" resultType="Long">
+		select
+		    sum(fd.file_size)
+		from
+		    files f, file_detail fd, mail m
+		where
+		    m.mem_no = #{memNo}
+		    and m.file_no = f.file_no and f.file_no = fd.file_no
+	</select>
+	
+	<insert id="reqAddCapacity" parameterType="UpgradeReqVO">
+		insert into upgrade_req(
+			ur_no
+			,req_mem_no
+			, req_coment
+			, req_gb
+		) values (
+			seq_upgrade_req.nextval
+			, #{reqMemNo}
+			, #{reqComent}
+			, #{reqGb}
+		)
+	</insert>
+	
+	<select id="checkReqAddCapacity" parameterType="MemberVO" resultType="UpgradeReqVO">
+		select
+			req_mem_no
+			, resp_mem_no
+			, req_coment
+			, req_date
+			, req_gb
+			, req_status
+			, resp_reason
+		from
+			upgrade_req
+		where
+			req_mem_no = #{memNo} and req_gb = 1 and req_status = 0
+	</select>
+	
+	<select id="getDeptList" resultType="DepartmentVO">
+		select
+			dept_no
+			, dept_name
+		from
+			department
+		order by dept_no
+	</select>
+	
+	<select id="getDeptMember" parameterType="DepartmentVO" resultType="MemberVO">
+		select
+			m.mem_name
+			, p.pos_name
+			, d.dept_name
+			, m.mem_email
+		from 
+			member m, position p, department d
+		where
+			m.pos_no = p.pos_no and m.dept_no = d.dept_no
+			and d.dept_no = #{deptNo}
+		order by
+			m.mem_no
+	</select>
+	
+	<update id="changeStatusByOutOfOffice">
+		update
+			mail
+		set
+			mail_status = '전송실패'
+		where
+			mail_no = #{mailNo}
+	</update>
+	
+	<select id="getTagMail" parameterType="RecipientTagVO" resultType="MailRecipientVO">
+		select
+			rec_no
+			, mail_tag_no
+		from
+			recipient_tag
+		where
+			mail_tag_no = #{mailTagNo}
+	</select>
+	
+	<select id="getMailRecipient" parameterType="MailRecipientVO" resultType="MailRecipientVO">
+	    select
+	        b.*
+	    from (
+	        select
+	            a.*, row_number() over (order by a.mail_no) AS mail_row_no
+	        from (
+	            select
+	                mr.mail_no,
+	                mr.read_yn AS mailReadYn,
+	                mr.rec_fav_yn AS mailFavYn,
+	                me.mem_no,
+	                me.mem_name,
+	                me.mem_email,
+	                m.mail_title,
+	                m.mail_date,
+	                m.file_no,
+	                m.mail_security_yn,
+	                m.mail_imp,
+	                mr.rec_del_yn,
+	                mr.rec_no,
+	                mr.mail_gb
+	            from
+	                mail_recipient mr, member me, mail m
+	            where
+	                mr.rec_no = #{recNo}
+	                and m.mem_no = me.mem_no and mr.mail_no = m.mail_no
+	        ) a
+	        order by a.mail_no DESC
+	    ) b
+	</select>
+	
+  </mapper>

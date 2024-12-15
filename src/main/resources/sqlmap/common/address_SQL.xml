@@ -1,0 +1,307 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.ddit.common.address.mapper.IAddressMapper">
+	<select id="getAddress" parameterType="int" resultType="AddressVO">
+		SELECT
+		    ab_no
+		   ,mem_no
+		   ,ab_gb
+		   ,ab_name
+		FROM
+		    address_book
+		where
+			mem_no = ${memNo}
+	</select>
+	
+	<select id="allAddressList" parameterType="MemberVO" resultType="MemberVO">
+		SELECT
+		    m.mem_no
+		   ,m.pos_no
+		   ,m.dept_no
+		   ,m.mem_name
+		   ,m.mem_tel
+		   ,m.mem_email
+		   ,m.mem_addr1
+		   ,m.mem_addr2
+		   ,m.mem_post
+		   ,m.mem_status
+		   ,m.mem_profileimg
+		   ,p.pos_name
+		   ,d.dept_name
+            , nvl((
+                SELECT
+                    c.import_yn
+                FROM
+                    contact c
+                where c.con_tel = m.mem_tel
+                  and c.con_tel is not null
+                  and ab_no in (
+                    select ab_no from Address_book
+                    where mem_no = #{memNo}  
+                    and ab_gb = '중요'     
+                )
+            ),'N') AS import_yn
+		FROM
+		    member m
+		LEFT JOIN POSITION p ON m.pos_no = p.pos_no
+    	LEFT JOIN DEPARTMENT d ON m.dept_no = d.dept_no
+	</select>
+	
+<!-- 	<select id="allAddressList" resultType="MemberVO"> -->
+<!-- 		SELECT -->
+<!-- 		    m.mem_no -->
+<!-- 		   ,m.pos_no -->
+<!-- 		   ,m.dept_no -->
+<!-- 		   ,m.mem_name -->
+<!-- 		   ,m.mem_tel -->
+<!-- 		   ,m.mem_email -->
+<!-- 		   ,m.mem_addr1 -->
+<!-- 		   ,m.mem_addr2 -->
+<!-- 		   ,m.mem_post -->
+<!-- 		   ,m.mem_status -->
+<!-- 		   ,m.mem_profileimg -->
+<!-- 		   ,p.pos_name -->
+<!-- 		   ,d.dept_name -->
+<!-- 		FROM -->
+<!-- 		    member m -->
+<!-- 		LEFT JOIN POSITION p ON m.pos_no = p.pos_no -->
+<!--     	LEFT JOIN DEPARTMENT d ON m.dept_no = d.dept_no -->
+<!-- 	</select> -->
+	
+	<select id="groupAddressList" resultType="ContactVO" parameterType="MemberVO">
+		SELECT m.*, 
+		       CASE WHEN c.mem_no IS NOT NULL AND c.importYn = 'Y' THEN 1 
+		            WHEN c.mem_no IS NOT NULL AND c.importYn = 'N' THEN 0 
+		            ELSE 0 END AS is_favorite,
+		       c.importYn
+		FROM member m
+		LEFT JOIN contact c ON m.mem_no = c.mem_no
+	</select>
+	
+	<select id="myGroupAddressList" resultType="MemberVO" parameterType="MemberVO">
+		SELECT
+		    m.mem_no
+		   ,m.pos_no
+		   ,m.dept_no
+		   ,m.mem_name
+		   ,m.mem_tel
+		   ,m.mem_email
+		   ,m.mem_addr1
+		   ,m.mem_addr2
+		   ,m.mem_post
+		   ,m.mem_status
+		   ,m.mem_profileimg
+		   ,p.pos_name
+		   ,d.dept_name
+            , nvl((
+                SELECT
+                    c.import_yn
+                FROM
+                    contact c
+                where c.con_tel = m.mem_tel
+                  and c.con_tel is not null
+                  and ab_no in (
+                    select ab_no from Address_book
+                    where mem_no = #{memNo}  
+                    and ab_gb = '중요'     
+                )
+            ),'N') AS import_yn
+		FROM
+		    member m
+		LEFT JOIN POSITION p ON m.pos_no = p.pos_no
+    	LEFT JOIN DEPARTMENT d ON m.dept_no = d.dept_no
+        where
+            m.dept_no = #{deptNo}
+	</select>
+	
+	<select id="deptList" resultType="DepartmentVO">
+   		SELECT DISTINCT 
+		    dept_no, 
+		    dept_name
+		FROM 
+		    department
+		ORDER BY 
+		    dept_no ASC
+	</select>
+	
+	<insert id="addModalAddress" parameterType="AddressVO">
+		INSERT INTO address_book (
+		    ab_no
+		   ,mem_no
+		   ,ab_gb
+		   ,ab_name
+		) VALUES (
+			SEQ_AB_NO.NEXTVAL
+		   ,#{memNo}
+		   ,#{abGb}
+		   ,#{abName}
+		)
+	</insert>
+	
+	<delete id="delContact" parameterType="AddressVO">
+		delete from CONTACT
+		where ab_no = #{abNo}
+	</delete>
+	
+	<delete id="delModalAddress" parameterType="AddressVO">
+		delete from address_book
+		where ab_no = #{abNo}
+	</delete>
+	
+	<update id="modifyModalAddress" parameterType="AddressVO">
+		UPDATE address_book
+		    SET
+		        ab_name = #{abName}
+		WHERE
+		    ab_no = #{abNo}
+	</update>
+	
+	<insert id="moveAddress" parameterType="hashMap">
+	        insert INTO contact (con_no, ab_no, con_name, con_dept, con_pos, con_tel, con_email , import_yn)
+	        VALUES (SEQ_CON_NO.NEXTVAL, #{abNo}, #{member.memName}, #{member.deptName}, #{member.posName}, #{member.memTel}, #{member.memEmail} , 'Y')
+	</insert>
+	
+	<insert id="moveAddress2" parameterType="java.util.List">
+	    <foreach collection="list" item="item" index="index" open="INSERT ALL " separator=" " close="SELECT * FROM DUAL">
+	        INTO contact (con_no, ab_no, con_name, con_dept, con_pos, con_tel, con_email)
+	        VALUES (SEQ_CON_NO.NEXTVAL, #{item.abNo}, #{item.member.memName}, #{item.member.deptName}, #{item.member.posName}, #{item.member.memTel}, #{item.member.memEmail})
+	    </foreach>
+	</insert>
+
+	<select id="importAddress" resultType="ContactVO" parameterType="ContactVO">
+		SELECT
+		    con_no
+		   ,ab_no
+		   ,con_profile
+		   ,con_name
+		   ,con_com
+		   ,con_dept
+		   ,con_pos
+		   ,con_email
+		   ,con_tel
+		   ,con_com_tel
+		   ,con_com_addr
+		   ,con_com_fax
+		   ,con_memo
+		   ,import_yn
+		FROM
+		    contact
+		where
+			ab_no = #{abNo}
+	</select>
+	
+	<insert id="addExContact" parameterType="ContactVO">
+		INSERT INTO contact (
+		    con_no
+		   ,ab_no
+		   ,con_profile
+		   ,con_name
+		   ,con_com
+		   ,con_dept
+		   ,con_pos
+		   ,con_email
+		   ,con_tel
+		   ,con_com_tel
+		   ,con_memo
+		   ,import_yn
+		) VALUES (
+		    SEQ_CON_NO.NEXTVAL
+		   ,#{abNo}
+		   ,#{conProfile}
+		   ,#{conName}
+		   ,#{conCom}
+		   ,#{conDept}
+		   ,#{conPos}
+		   ,#{conEmail}
+		   ,#{conTel}
+		   ,#{conComTel}
+		   ,#{conMemo}
+		   ,'N'
+		)
+	</insert>
+	
+	<select id="addContact" parameterType="String" resultType="AddressVO">
+		SELECT
+		    ab_no
+		   ,mem_no
+		   ,ab_gb
+		   ,ab_name
+		FROM
+		    address_book
+		where
+			mem_no = #{memNo} and ab_gb = '외부'
+	</select>
+	
+	<delete id="deleteChecked" parameterType="java.util.List">
+	    delete from contact
+	    where con_no in 
+	    <foreach item="item" index="index" collection="list" open="(" separator="," close=")">
+	        #{item.conNo}
+	    </foreach>
+	</delete>
+
+	<select id="getAbNo" parameterType="int" resultType="AddressDTO">
+		SELECT
+		    m.mem_no
+		   ,ab.ab_no
+		   ,ab.ab_gb
+		FROM
+		    member m
+		LEFT JOIN address_book ab ON m.mem_no = ab.mem_no
+		where m.mem_no = #{memNo}
+		and ab.ab_gb = '중요'
+	</select>
+	
+	<delete id="delFavorit" parameterType="java.util.List">
+	    DELETE FROM contact
+		WHERE
+		    con_no = #{conNo}
+	</delete>
+	
+	<select id="getContactByAbNo" parameterType="ContactVO" resultType="ContactVO">
+		SELECT
+		    con_no
+		  , ab_no
+		  , con_profile
+		  , con_name
+		  , con_com
+		  , con_dept
+		  , con_pos
+		  , con_email
+		  , con_tel
+		  , con_com_tel
+		  , con_com_addr
+		  , con_com_fax
+		  , con_memo
+		  , import_yn
+		FROM
+		    contact
+		WHERE
+			con_no = #{conNo}
+	</select>
+	
+<!-- 	<select id="importAbNo" parameterType="int" resultType="ContactVO"> -->
+<!-- 		SELECT -->
+<!-- 		    con_no -->
+<!-- 		   ,ab_no -->
+<!-- 		   ,con_profile -->
+<!-- 		   ,con_name -->
+<!-- 		   ,con_com -->
+<!-- 		   ,con_dept -->
+<!-- 		   ,con_pos -->
+<!-- 		   ,con_email -->
+<!-- 		   ,con_tel -->
+<!-- 		   ,con_com_tel -->
+<!-- 		   ,con_com_addr -->
+<!-- 		   ,con_com_fax -->
+<!-- 		   ,con_memo -->
+<!-- 		   ,import_yn -->
+<!-- 		FROM -->
+<!-- 		    contact -->
+<!-- 		where ab_no = #{abNo} -->
+<!-- 	</select> -->
+
+	
+</mapper>

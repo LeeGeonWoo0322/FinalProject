@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  <mapper namespace="kr.or.ddit.common.attend.mapper.IWorkAtstateMapper">
+  	<select id="printAtstate">
+  	</select>
+  	
+  	<insert id="changeWork">
+  		insert into WORK_ATSTATE (
+  			WORK_ATSTATE,
+  			mem_no,
+  			state_type,
+  			date_d
+  		) VALUES(
+  			seq_atstate_no.NEXTVAL,
+  			#{memNo},
+  			#{stateType},
+  			to_char(to_date(sysdate),'D')
+  		)
+  	</insert>
+  	
+  	<select id="curMonth" parameterType="WorkAtstateVO" resultType="WorkAtstateVO" >
+  		select 
+  			work_atstate, mem_no, atstate_type, atstate_date, atstate_cont, state_type, state_date, date_d
+  		from 
+  			work_atstate
+  		where 
+  			1 = 1
+  			AND mem_no = #{memNo}
+  			AND to_char(state_date,'YYYY/MM') like '%'||#{stateDate}||'%'
+  		order by work_atstate desc
+  	</select>
+  	
+  	<select id="atList" resultType="WorkAtstateVO" parameterType="WorkAtstateVO">
+  		select
+  			work_atstate, mem_no, atstate_type, atstate_date, atstate_cont, state_type, state_date, date_d, change_memno
+  		from 
+  			work_atstate
+  		where 
+  			1 = 1
+  			AND mem_no = #{memNo}
+  			AND to_char(atstate_date,'YYYY/MM') like '%'||#{atstateDate}||'%'
+  		order by atstate_date desc
+  	</select>
+  	
+  	<select id="curModal" parameterType="WorkAtstateVO" resultType="WorkAtstateVO">
+  		select
+  			work_atstate, mem_no, atstate_type, atstate_date, atstate_cont, state_type, state_date, date_d
+  		from 
+  			work_atstate
+  		where
+  			1 = 1
+  			AND work_atstate = #{workAtstate}
+  	</select>
+  	
+  	<update id="updAtstate" parameterType="WorkAtstateVO">
+  		update
+  			work_atstate
+  		set
+  			  atstate_type = #{atstateType}
+			, atstate_date = to_date(#{atstateDate}, 'yyyy/MM/dd hh24:mi:ss')
+  			, atstate_cont = #{atstateCont}
+  		where 
+  			work_atstate = #{workAtstate}
+  	</update>
+  	
+  	<delete id="delAtstate" parameterType="WorkAtstateVO">
+  		delete
+  		from
+  			work_atstate
+  		where
+  			work_atstate = #{workAtstate}
+  	</delete>
+  	
+  	<update id="changeMemStatus">
+  		update 
+  			member
+  		set
+  			mem_status = #{stateType}
+  		where
+  			1=1
+  			AND mem_no = #{memNo}
+  	</update>
+  	
+  	<insert id="updWork" parameterType="WorkAtstateVO">
+  		insert into work_atstate(
+  			work_atstate,
+  			mem_no,
+  			atstate_type,
+  			atstate_date,
+  			atstate_cont,
+  			state_type,
+  			state_date,
+  			change_memno
+  		) values (
+  			seq_atstate_no.NEXTVAL,
+  			#{memNo},
+  			#{stateType},
+  			to_date(#{atstateDate},'YYYY/MM/DD hh24:mi:ss'),
+  			#{atstateCont},
+  			#{stateType},
+  			to_date(#{stateDate},'YYYY/MM/DD hh24:mi:ss'),
+  			#{changeMemno}
+  		)
+  	</insert>
+  	
+	<select id="printWorking" parameterType="WorkAtstateVO" resultType="WorkAtstateVO">
+	select
+	    *
+	from (
+		 select
+        	*
+    	  from
+        	 work_atstate
+    	  where
+       		 mem_no = #{memNo}
+        	 AND to_char(state_date, 'YYYYMMDD') like '%'||#{stateDate}||'%'
+    	 	 order by work_atstate desc
+    	  )
+    where rownum = 1
+	</select>
+	
+	<select id="printLWork" parameterType="MemberVO" resultType="MemberVO">
+		select
+			*
+		from
+			member
+		where
+			mem_no = #{memNo}
+	</select>
+</mapper>

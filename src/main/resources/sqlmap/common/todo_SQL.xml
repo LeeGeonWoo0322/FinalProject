@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  <mapper namespace="kr.or.ddit.common.todoList.mapper.IToDoListMapper">
+  
+  
+    <select id="listToDo" parameterType="PaginationInfoVO" resultType="ToDoVO">
+  	select
+  		b.*
+  	from(
+	  	select 
+	  		a.*, row_number() over (order by a.td_no desc) rnum
+	  	from(
+	  		SELECT
+			    td_no
+			  , td_content
+			  , fin_yn
+			  , import_yn
+			  , reg_date
+			  , td_type
+			  , mem_no
+			FROM
+			    todo
+	  		where mem_no = #{memNo}
+	  		order by reg_date ASC
+	  	) a	
+  	) b
+  	
+  	<![CDATA[
+			where b.rnum >= #{startRow} and b.rnum <= #{endRow}
+		]]>
+  	</select>
+  
+  	<select id="allList" parameterType="int" resultType="ToDoVO">
+    	SELECT
+		   substr(reg_date,1,10) reg_date
+		  , td_type
+		  , mem_no
+		FROM
+		    todo
+  		where mem_no = #{memNo} 
+        group by (td_type,substr(reg_date,1,10),mem_no)
+        order by reg_date DESC
+  	</select>
+  
+    <select id="dayTodo" parameterType="int" resultType="ToDoVO">
+  		SELECT
+		    td_no
+		  , td_content
+		  , fin_yn
+		  , import_yn
+		  , reg_date
+		  , td_type
+		  , mem_no
+		FROM
+		    todo
+  		where mem_no = #{memNo} 
+  		and td_type = 'day' 
+  		and reg_date like '%'||substr(sysdate,0,10)||'%'
+  		order by reg_date ASC
+  	
+  	</select>
+    <select id="weekTodo" parameterType="int" resultType="ToDoVO">
+  		SELECT
+		    td_no
+		  , td_content
+		  , fin_yn
+		  , import_yn
+		  , reg_date
+		  , td_type
+		  , mem_no
+		FROM
+		    todo
+  		where mem_no = #{memNo} 
+  		and td_type = 'week' 
+  		and to_char(reg_date,'iw') = to_char(sysdate,'iw')
+  		order by reg_date ASC
+  	
+  	</select>
+    <select id="monthTodo" parameterType="int" resultType="ToDoVO">
+  		SELECT
+		    td_no
+		  , td_content
+		  , fin_yn
+		  , import_yn
+		  , reg_date
+		  , td_type
+		  , mem_no
+		FROM
+		    todo
+  		where mem_no = #{memNo} 
+  		and td_type = 'month' 
+  		and reg_date like '%'||substr(sysdate,0,7)||'%'
+  		order by reg_date ASC
+  	
+  	</select>
+  	
+  	<update id="updateTodo" parameterType="ToDoVO">
+  		update todo
+  		set 
+  			td_content = #{tdContent},
+  			import_yn = #{importYn},
+  			fin_yn = #{finYn},
+  			reg_date = sysdate
+  		where td_no = #{tdNo}
+  		
+  	</update>
+  	
+  
+  	<insert id="insertTodo" parameterType="ToDoVO" useGeneratedKeys="true">
+  	
+  		<selectKey keyProperty="tdNo" resultType="int" order="BEFORE">
+  			select seq_todo.nextval from dual
+  		</selectKey>
+  	
+  		INSERT INTO todo (
+		    td_no
+		    , td_content
+		    , fin_yn
+		    , import_yn
+		    , reg_date
+		    , td_type
+		    , mem_no
+		) VALUES (
+		   #{tdNo}
+		  , #{tdContent}
+		  , default
+		  , #{importYn}
+		  , sysdate
+		  , #{tdType}
+		  , #{memNo}
+		)
+  	
+  	</insert>
+  	
+  	<insert id="insertTodo1" parameterType="ToDoVO" useGeneratedKeys="true">
+  		<selectKey keyProperty="tdNo" resultType="int" order="BEFORE">
+  			select seq_todo.nextval from dual
+  		</selectKey>
+  	
+  		INSERT INTO todo (
+		    td_no
+		    , td_content
+		    , fin_yn
+		    , import_yn
+		    , reg_date
+		    , td_type
+		    , mem_no
+		) VALUES (
+		   #{tdNo}
+		  , #{tdContent}
+		  , default
+		  , #{importYn}
+		  , sysdate
+		  , #{tdType}
+		  , #{memNo}
+		)
+  	
+  	</insert>
+  
+	<delete id="delTodo" parameterType="int" >
+		DELETE FROM todo
+		WHERE
+        td_no = #{tdNo}
+    
+	</delete>
+	
+	
+  	
+  	<update id="finTodo" parameterType="ToDoVO"  >
+  		update todo
+  		set 
+  		fin_yn = #{finYn}
+  		where td_no = #{tdNo}
+  		and mem_no = #{memNo}
+  		
+  		
+  		 
+  	</update>
+  	
+  	<select id="monthModel" parameterType="ToDoVO">
+  		      
+		SELECT
+		    td_no
+		  , td_content
+		  , fin_yn
+		  , import_yn
+		  , reg_date
+		  , td_type
+		  , mem_no
+		FROM
+		    todo
+  		where mem_no = #{memNo}
+  		and td_type = #{tdType} 
+  		and to_date(reg_date,'yyyy/MM/dd') = to_date(#{regDate},'yy/MM/dd')
+  		order by reg_date ASC
+  	</select>
+  	
+  	<select id="weekModel" parameterType="ToDoVO" resultType="ToDoVO">
+  	SELECT
+		    td_no
+		  , td_content
+		  , fin_yn
+		  , import_yn
+		  , reg_date
+		  , td_type
+		  , mem_no
+		FROM
+		    todo
+  		where mem_no = 1 
+  		and td_type = 'week' 
+  		and to_char(to_date(reg_date,'yyyy/MM/dd'),'iw') = to_char(to_date(#{regDate},'yy/MM/dd'),'iw')
+  		order by reg_date ASC
+  	</select>
+  	
+  	<select id="dayModel" parameterType="ToDoVO" resultType="ToDoVO">
+  		SELECT
+		    td_no
+		  , td_content
+		  , fin_yn
+		  , import_yn
+		  , reg_date
+		  , td_type
+		  , mem_no
+		FROM
+		    todo
+  		where mem_no = #{memNo} 
+  		and td_type = #{tdType} 
+  		and to_char(to_date(reg_date,'yyyy/MM/dd')) = to_char(to_date(#{regDate},'yy/MM/dd'))
+  		order by reg_date ASC
+  	</select>
+  	
+  	<select id="finTotal" parameterType="ToDoVO" resultType="Map">
+  	 select 
+        count(case when fin_yn='Y' then td_no end) as finTodo,
+        count(td_no) as totalTodo
+    from 
+        todo
+    where 
+        to_char(reg_date,'YY/MM/DD') = #{regDate}  
+        and mem_no = #{memNo} 
+        and td_type = #{tdType}
+  	</select>
+  	
+  </mapper>
