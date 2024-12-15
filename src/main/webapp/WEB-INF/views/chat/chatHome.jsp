@@ -624,20 +624,19 @@
     
 	
 	function loadChatRooms() {
-	    return new Promise((resolve, reject) => {
-	        $.ajax({
-	            url: "/chat/chatRoomList.do",
-	            type: "POST",
-	            success: function(roomList) {
-	                console.log(roomList);
-	                updateChatRoomList(roomList);  // 채팅방 목록 업데이트 후 resolve 호출
-	            },
-	            error: function(xhr, status, error) {
-	                console.error("채팅방 목록을 불러오는 중 오류 발생:", error);
-	            }
-	        });
+	    $.ajax({
+	        url: "/chat/chatRoomList.do",
+	        type: "POST",
+	        success: function(roomList) {
+	            console.log(roomList);
+	            updateChatRoomList(roomList);  // 채팅방 목록 업데이트
+	        },
+	        error: function(xhr, status, error) {
+	            console.error("채팅방 목록을 불러오는 중 오류 발생:", error);
+	        }
 	    });
 	}
+
 	
 	// 채팅방 목록을 업데이트하는 함수
 	function updateChatRoomList(roomList) {
